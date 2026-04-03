@@ -12,6 +12,10 @@ import EcgAnalysis from './pages/EcgAnalysis';
 import CancerAnalysisPatient from './pages/CancerAnalysisPatient';
 import CancerAnalysisDoctor from './pages/CancerAnalysisDoctor';
 import StitchPremiumUI from './pages/StitchPremiumUI';
+import AppointmentBook from './pages/AppointmentBook';
+import LabPortal from './pages/LabPortal';
+import LabLogin from './pages/LabLogin';
+import LabSignup from './pages/LabSignup';
 import DNABackground from './components/DNABackground';
 import { ThemeProvider } from './context/ThemeContext';
 import { AuthProvider } from './context/AuthContext';
@@ -39,6 +43,10 @@ function Layout() {
             <Route path="/analyze-ecg" element={<EcgAnalysis />} />
             <Route path="/cancer-analysis-patient" element={<CancerAnalysisPatient />} />
             <Route path="/cancer-analysis-doctor" element={<CancerAnalysisDoctor />} />
+            <Route path="/appointments/book" element={<AppointmentBook />} />
+            <Route path="/lab-portal" element={<LabPortal />} />
+            <Route path="/lab-login" element={<LabLogin />} />
+            <Route path="/lab-signup" element={<LabSignup />} />
           </Routes>
         </main>
         {!isAuthPage && !isPremiumPage && <Footer />}

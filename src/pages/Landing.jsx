@@ -1,6 +1,6 @@
 import React, { useEffect } from 'react';
 import { Button } from '../components/Button';
-import { ArrowRight, BarChart3, Activity, ShieldCheck, HeartPulse, UploadCloud, Brain, FileText, ChevronRight, CheckCircle2, Sparkles } from 'lucide-react';
+import { ArrowRight, BarChart3, Activity, ShieldCheck, HeartPulse, UploadCloud, Brain, FileText, ChevronRight, CheckCircle2, Sparkles, Database } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { motion } from 'framer-motion';
@@ -63,7 +63,7 @@ export default function Landing() {
                 Bridging the gap between hospitals and patients with precision AI. Transform diagnostic data into clinical-grade health strategies.
               </motion.p>
 
-              <motion.div variants={fadeInUp} className="flex flex-col sm:flex-row gap-4 pt-4">
+              <motion.div variants={fadeInUp} className="flex flex-col sm:flex-row flex-wrap gap-4 pt-4 text-center">
                 <Link to="/signup">
                   <Button size="lg" className="button-premium w-full sm:w-auto h-16 rounded-2xl font-extrabold uppercase tracking-widest px-10 text-sm">
                     Initialize Platform <ArrowRight className="w-5 h-5 ml-3" />
@@ -74,6 +74,11 @@ export default function Landing() {
                     Secure Login
                   </Button>
                 </Link>
+                <div className="w-full sm:w-auto text-center mt-2 sm:mt-0 sm:ml-4 flex items-center justify-center">
+                  <Link to="/lab-login" className="inline-flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-emerald-500 hover:text-emerald-400 transition-colors">
+                    <Database className="w-3.5 h-3.5" /> Lab Portal Login
+                  </Link>
+                </div>
               </motion.div>
             </motion.div>
 

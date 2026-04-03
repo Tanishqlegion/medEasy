@@ -8,6 +8,19 @@
   --font-family-display: 'Outfit', 'Inter', system-ui, sans-serif;
 }
 
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background-color: var(--accent-primary);
+  border-radius: 10px;
+}
+
 @layer base {
   :root {
     --bg-main: #f8fafc;

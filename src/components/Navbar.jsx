@@ -30,12 +30,23 @@ export default function Navbar() {
         {/* Right: Actions */}
         <div className="flex items-center gap-3">
           {user && (
-            <Link
-              to={user.role === 'doctor' ? '/hospital-dashboard' : '/patient-dashboard'}
-              className="text-[11px] font-bold uppercase tracking-wider text-[var(--text-muted)] hover:text-cyan-500 transition-colors px-4 py-2 rounded-lg hover:bg-cyan-500/5"
-            >
-              Dashboard
-            </Link>
+            <>
+              <Link
+                to={user.role === 'doctor' ? '/hospital-dashboard' : '/patient-dashboard'}
+                className="text-[11px] font-bold uppercase tracking-wider text-[var(--text-muted)] hover:text-cyan-500 transition-colors px-4 py-2 rounded-lg hover:bg-cyan-500/5"
+              >
+                Dashboard
+              </Link>
+
+              {/* ✅ NEW LINKS */}
+              <Link
+                to="/appointments/book"
+                className="text-[11px] font-bold uppercase tracking-wider text-[var(--text-muted)] hover:text-cyan-500 transition-colors px-4 py-2 rounded-lg hover:bg-cyan-500/5"
+              >
+                Appointments
+              </Link>
+
+            </>
           )}
 
           <button
