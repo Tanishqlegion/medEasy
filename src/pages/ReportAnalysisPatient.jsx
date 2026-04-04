@@ -5,7 +5,7 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import { Button } from '../components/Button';
 import { cn } from '../components/Button';
 import { useAuth } from '../context/AuthContext';
-import { PieChart, Pie, Cell, ResponsiveContainer, RadarChart, PolarGrid, PolarAngleAxis, Radar, BarChart, Bar, XAxis, YAxis, Tooltip, CartesianGrid } from 'recharts';
+import { PieChart, Pie, Cell, ResponsiveContainer, RadarChart, PolarGrid, PolarAngleAxis, Radar, BarChart, Bar, XAxis, YAxis, Tooltip, CartesianGrid, LineChart, Line } from 'recharts';
 import * as pdfjs from 'pdfjs-dist';
 import Tesseract from 'tesseract.js';
 
@@ -15,9 +15,10 @@ const FLASK_URL = 'http://127.0.0.1:5000';
 
 // Map ReportAnalysisPatient mode → Flask endpoint
 const FLASK_ENDPOINT = {
-  ecg: '/analyze-ecg',
+  ecg: '/analyze-ecg-signal',
   ct:  '/analyze-lung',
   mri: '/analyze-brain',
+  kidney: '/analyze-kidney',
 };
 
 const fadeInUp = {
@@ -164,33 +165,116 @@ export default function ReportAnalysisPatient() {
       // 2. SPECIALIST MODE — route through Flask neural model first
       if (FLASK_ENDPOINT[mode]) {
         setPrivacyStep(`Running ${mode.toUpperCase()} neural model...`);
+        const targetHW = mode === 'kidney' ? [512, 512] : mode === 'mri' ? [299, 299] : [224, 224];
+        
         const imageUrl = canvas.toDataURL('image/jpeg', 0.9);
         const blob     = await fetch(imageUrl).then(r => r.blob());
         const fileObj  = new File([blob], file.name || `${mode}.jpg`, { type: 'image/jpeg' });
         const formData = new FormData();
         formData.append('image', fileObj);
 
-        const flaskRes = await fetch(`${FLASK_URL}${FLASK_ENDPOINT[mode]}`, { method: 'POST', body: formData });
-        if (!flaskRes.ok) throw new Error(`Model error: ${flaskRes.status}`);
-        const flaskData = await flaskRes.json();
-        if (flaskData.error) throw new Error(flaskData.error);
+        let flaskData;
+        try {
+          const flaskRes = await fetch(`${FLASK_URL}${FLASK_ENDPOINT[mode]}`, { method: 'POST', body: formData });
+          if (!flaskRes.ok) throw new Error(`Model error: ${flaskRes.status}`);
+          flaskData = await flaskRes.json();
+          if (flaskData.error) throw new Error(flaskData.error);
+        } catch (primaryErr) {
+          // ECG fallback: try signal processing pipeline from notebook model
+          if (mode === 'ecg') {
+            console.warn('ECG MaxViT failed, trying signal processing:', primaryErr.message);
+            setPrivacyStep('Engaging Signal Processing Engine (Fallback)...');
+            const fbForm = new FormData();
+            fbForm.append('image', fileObj);
+            const fbRes = await fetch(`${FLASK_URL}/analyze-ecg-signal`, { method: 'POST', body: fbForm });
+            if (!fbRes.ok) throw new Error(`Both ECG engines failed. Primary: ${primaryErr.message}`);
+            flaskData = await fbRes.json();
+            if (flaskData.error) throw new Error(flaskData.error);
+          } else {
+            throw primaryErr;
+          }
+        }
 
-        // 3. Groq to produce structured clinical JSON using model output as source of truth
-        setPrivacyStep('Generating clinical report from model output...');
-        const specialistPrompt = `You are an expert diagnostic AI. A specialized neural model analyzed this ${mode} scan and returned:
+        const prompts = {
+          ecg: `You are an expert cardiologist. A specialized ECG signal model analyzed this heartbeat:
 ${JSON.stringify(flaskData, null, 2)}
-
-The model classification "${flaskData.prediction}" is GROUND TRUTH. Build a clinical report CONSISTENT with this classification.
+The model classification "${flaskData.prediction}" is GROUND TRUTH. Build a comprehensive clinical report CONSISTENT with this classification.
+CRITICAL RULE: If confidence is < 0.6 (${(flaskData.confidence * 100).toFixed(1)}%), you MUST state "Please consider consulting a doctor immediately due to low AI certainty" in the summary.
 Output strict JSON only:
 {
-  "summary": "2-sentence clinical interpretation consistent with classification: ${flaskData.prediction || ''}",
-  "health_score": <0-100>,
-  "parameters": [{"name":"string","value":"string","status":"Normal|Abnormal|Critical"}],
-  "risk_assessment": {"cardiovascular":{"level":"Low|Moderate|High"},"metabolic":{"level":"Low|Moderate|High"},"organ_health":{"level":"Low|Moderate|High"}},
+  "summary": "3-to-4 sentence exhaustive clinical interpretation for ECG detailing physiological implications and immediate next steps.",
+  "health_score": 90,
+  "parameters": [{"name":"Heart Rhythm","value":"string","status":"Normal|Abnormal|Critical"}],
+  "risk_assessment": {"cardiovascular_risk":{"level":"Low|Moderate|High"}},
   "threats": [{"level":"LOW|MODERATE|HIGH|CRITICAL","condition":"string","description":"string"}],
+  "emergency_medication": [{"name":"string", "dosage":"string", "reason":"string"}],
   "diet": [{"recommendation":"string","category":"string"}],
+  "special_foods": [{"name":"string", "benefit":"string"}],
+  "vital_trends": [{"name":"Systolic", "value": 120}, {"name":"Diastolic", "value": 80}, {"name":"BPM", "value": 75}],
+  "recovery_timeline": [{"month": "M1", "score": 60}, {"month": "M2", "score": 70}, {"month": "M3", "score": 85}, {"month": "M6", "score": 95}],
   "routine": [{"time":"string","activity":"string"}]
-}`;
+}`,
+          mri: `You are an expert neurosurgeon. A specialized Brain MRI model returned:
+${JSON.stringify(flaskData, null, 2)}
+The model classification "${flaskData.prediction}" is GROUND TRUTH. 
+CRITICAL RULE: If confidence is < 0.6 (${(flaskData.confidence * 100).toFixed(1)}%), you MUST state "Please consider consulting a doctor immediately due to low AI certainty" in the summary.
+Output strict JSON only:
+{
+  "summary": "3-to-4 sentence exhaustive neurological interpretation for Brain MRI detailing anatomical findings and implications.",
+  "health_score": 90,
+  "parameters": [{"name":"Brain Tissue","value":"string","status":"Normal|Abnormal|Critical"}],
+  "risk_assessment": {"neurological_risk":{"level":"Low|Moderate|High"}},
+  "threats": [{"level":"LOW|MODERATE|HIGH|CRITICAL","condition":"string","description":"string"}],
+  "emergency_medication": [{"name":"string", "dosage":"string", "reason":"string"}],
+  "diet": [{"recommendation":"string","category":"string"}],
+  "special_foods": [{"name":"string", "benefit":"string"}],
+  "vital_trends": [{"name":"ICP", "value": 12}, {"name":"CBF", "value": 50}, {"name":"O2", "value": 98}],
+  "recovery_timeline": [{"month": "M1", "score": 60}, {"month": "M2", "score": 70}, {"month": "M3", "score": 85}, {"month": "M6", "score": 95}],
+  "routine": [{"time":"string","activity":"string"}]
+}`,
+          ct: `You are an expert pulmonologist/oncologist. A specialized Lung CT model returned:
+${JSON.stringify(flaskData, null, 2)}
+The model classification "${flaskData.prediction}" is GROUND TRUTH.
+CRITICAL RULE: If confidence is < 0.6 (${(flaskData.confidence * 100).toFixed(1)}%), you MUST state "Please consider consulting a doctor immediately due to low AI certainty" in the summary.
+Output strict JSON only:
+{
+  "summary": "3-to-4 sentence exhaustive pulmonary interpretation for Lung CT, outlining parenchymal anomalies and oncological evaluation.",
+  "health_score": 90,
+  "parameters": [{"name":"Lung Parenchyma","value":"string","status":"Normal|Abnormal|Critical"}],
+  "risk_assessment": {"pulmonary_risk":{"level":"Low|Moderate|High"}},
+  "threats": [{"level":"LOW|MODERATE|HIGH|CRITICAL","condition":"string","description":"string"}],
+  "emergency_medication": [{"name":"string", "dosage":"string", "reason":"string"}],
+  "diet": [{"recommendation":"string","category":"string"}],
+  "special_foods": [{"name":"string", "benefit":"string"}],
+  "vital_trends": [{"name":"SpO2", "value": 95}, {"name":"Resp Rate", "value": 16}, {"name":"FEV1", "value": 80}],
+  "recovery_timeline": [{"month": "M1", "score": 60}, {"month": "M2", "score": 70}, {"month": "M3", "score": 85}, {"month": "M6", "score": 95}],
+  "routine": [{"time":"string","activity":"string"}]
+}`,
+          kidney: `You are an expert nephrologist. A specialized Kidney Ultrasound model returned:
+${JSON.stringify(flaskData, null, 2)}
+The model classification "${flaskData.prediction}" is GROUND TRUTH.
+CRITICAL RULE: If confidence is < 0.6 (${(flaskData.confidence * 100).toFixed(1)}%), you MUST state "Please consider consulting a doctor immediately due to low AI certainty" in the summary.
+Output strict JSON only:
+{
+  "summary": "3-to-4 sentence exhaustive renal interpretation for Kidney Ultrasound detailing cortical abnormalities or obstructions.",
+  "health_score": 90,
+  "parameters": [{"name":"Renal Cortex","value":"string","status":"Normal|Abnormal|Critical"}],
+  "risk_assessment": {"renal_risk":{"level":"Low|Moderate|High"}},
+  "threats": [{"level":"LOW|MODERATE|HIGH|CRITICAL","condition":"string","description":"string"}],
+  "emergency_medication": [{"name":"string", "dosage":"string", "reason":"string"}],
+  "diet": [{"recommendation":"string","category":"string"}],
+  "special_foods": [{"name":"string", "benefit":"string"}],
+  "vital_trends": [{"name":"GFR", "value": 90}, {"name":"Creatinine", "value": 0.9}, {"name":"BUN", "value": 15}],
+  "recovery_timeline": [{"month": "M1", "score": 60}, {"month": "M2", "score": 70}, {"month": "M3", "score": 85}, {"month": "M6", "score": 95}],
+  "routine": [{"time":"string","activity":"string"}]
+}`
+        };
+
+        const specialistPrompt = prompts[mode] || `You are an expert diagnostic AI. A neural model analyzed this ${mode} scan and returned:
+${JSON.stringify(flaskData, null, 2)}
+The model classification "${flaskData.prediction}" is GROUND TRUTH. 
+CRITICAL RULE: If confidence is < 0.6 (${(flaskData.confidence * 100).toFixed(1)}%), you MUST state "Please consider consulting a doctor immediately due to low AI certainty" in the summary.
+Output strict JSON only: { "summary": "...", "health_score": 50, "parameters": [], "risk_assessment": {}, "threats": [], "diet": [], "routine": [] }`;
 
         const groqRes = await fetch('https://api.groq.com/openai/v1/chat/completions', {
           method: 'POST',
@@ -265,17 +349,19 @@ No PII allowed.`;
   const PIE_COLORS = ['#06b6d4', '#8b5cf6', '#10b981', '#f59e0b', '#ef4444'];
 
   return (
-    <div className="flex-grow flex flex-col px-6 py-12 text-[var(--text-main)] max-w-7xl mx-auto w-full relative z-10 bg-mesh min-h-screen">
+    <div className="flex-grow flex flex-col px-6 py-12 text-[var(--text-main)] max-w-7xl mx-auto w-full relative z-10 min-h-screen">
+      <div className="fixed inset-0 bg-[var(--bg-main)] -z-20 transition-colors duration-500" />
+      <div className="fixed inset-0 bg-mesh opacity-30 -z-10 pointer-events-none" />
       
       {/* Header */}
       <motion.div variants={fadeInUp} initial="initial" animate="animate" className="flex items-center justify-between mb-12 gap-6 flex-wrap relative z-20">
         <Button variant="outline" className="flex items-center gap-3 h-12 px-6 rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] border-white/10 glass-panel group" onClick={() => navigate('/patient-dashboard')}>
           <ArrowLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" /> Diagnostic Hub
         </Button>
-        <div className="flex p-1.5 bg-white/5 backdrop-blur-3xl rounded-2xl border border-white/10 gap-1.5">
-          {['report', 'ecg', 'ct', 'mri'].map((m) => (
+        <div className="flex p-1.5 bg-white/5 backdrop-blur-3xl rounded-2xl border border-[var(--glass-border)] gap-1.5">
+          {['report', 'ecg', 'ct', 'mri', 'kidney'].map((m) => (
             <button key={m} onClick={() => { setMode(m); setResult(null); setSaved(false); }}
-              className={cn("px-6 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-[0.2em] transition-all", mode === m ? "bg-cyan-500 text-white shadow-lg" : "text-white/40 hover:text-white hover:bg-white/5")}>
+              className={cn("px-6 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-[0.2em] transition-all", mode === m ? "bg-cyan-500 text-white shadow-lg" : "text-[var(--text-muted)] hover:text-[var(--text-main)] hover:bg-white/5")}>
               {m.toUpperCase()}
             </button>
           ))}
@@ -295,7 +381,7 @@ No PII allowed.`;
                 <div className="absolute inset-0 bg-dashboard-grid opacity-10 pointer-events-none" />
                 <div className="scanning-line" />
                 
-                <div className="w-32 h-32 rounded-[40px] bg-[#020617] border-2 border-cyan-500/30 flex items-center justify-center text-cyan-500 shadow-2xl relative z-10 group-hover:scale-105 transition-transform duration-700">
+                <div className="w-32 h-32 rounded-[40px] bg-[var(--bg-main)] border-2 border-cyan-500/30 flex items-center justify-center text-cyan-500 shadow-2xl relative z-10 group-hover:scale-105 transition-transform duration-700">
                   <Icon className="w-12 h-12" />
                 </div>
 
@@ -394,7 +480,7 @@ No PII allowed.`;
             </div>
 
             {/* MATRIX GRID */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                <div className="glass-panel p-10 rounded-[40px] border-white/10">
                   <h3 className="text-[11px] font-black uppercase tracking-[0.3em] mb-8 text-cyan-500">
                     <TrendingUp className="w-4 h-4 inline-block mr-3" /> Metabolic Markers
@@ -427,11 +513,29 @@ No PII allowed.`;
                   </div>
                </div>
 
+               {result.vital_trends && result.vital_trends.length > 0 && (
+               <div className="glass-panel p-10 rounded-[40px] border-white/10">
+                  <h3 className="text-[11px] font-black uppercase tracking-[0.3em] mb-8 text-blue-500">
+                    <Activity className="w-4 h-4 inline-block mr-3" /> Vital Sign Projections
+                  </h3>
+                  <div className="h-[240px]">
+                    <ResponsiveContainer>
+                      <BarChart data={result.vital_trends}>
+                        <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" vertical={false} />
+                        <XAxis dataKey="name" tick={{ fill: 'rgba(255,255,255,0.4)', fontSize: 10, fontWeight: 800 }} axisLine={false} tickLine={false} />
+                        <Tooltip cursor={{ fill: 'rgba(255,255,255,0.02)' }} contentStyle={{ backgroundColor: 'rgba(0,0,0,0.8)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '12px' }} />
+                        <Bar dataKey="value" fill="#3b82f6" radius={[4, 4, 0, 0]} />
+                      </BarChart>
+                    </ResponsiveContainer>
+                  </div>
+               </div>
+               )}
+
                <div className="glass-panel p-10 rounded-[40px] border-white/10">
                   <h3 className="text-[11px] font-black uppercase tracking-[0.3em] mb-8 text-rose-500">
-                    <AlertTriangle className="w-4 h-4 inline-block mr-3" /> Pathological Alerts
+                    <AlertTriangle className="w-4 h-4 inline-block mr-3" /> Pathological Alerts & Crisis Protocols
                   </h3>
-                  <div className="space-y-4">
+                  <div className="space-y-4 mb-6">
                      {result.threats?.map((t, i) => (
                        <div key={i} className="p-4 rounded-2xl bg-rose-500/5 border border-rose-500/10">
                           <p className="text-[10px] font-black text-rose-500 uppercase mb-1">{t.level} // {t.condition}</p>
@@ -439,33 +543,85 @@ No PII allowed.`;
                        </div>
                      ))}
                   </div>
+                  
+                  {result.emergency_medication && result.emergency_medication.length > 0 && (
+                    <div className="mt-6 pt-6 border-t border-rose-500/10">
+                      <h4 className="text-[9px] font-black uppercase tracking-[0.2em] mb-4 text-orange-400">Emergency Pharmaceuticals</h4>
+                      <div className="space-y-3">
+                         {result.emergency_medication.map((med, i) => (
+                           <div key={i} className="p-3 rounded-xl bg-orange-500/5 border border-orange-500/20 flex gap-3 items-center">
+                              <Pill className="w-4 h-4 text-orange-500 shrink-0" />
+                              <div>
+                                <p className="text-[10px] font-black text-orange-400 uppercase">{med.name} <span className="opacity-60 font-normal">({med.dosage})</span></p>
+                                <p className="text-[8px] text-white/40 mt-0.5 max-w-[200px] leading-tight">{med.reason}</p>
+                              </div>
+                           </div>
+                         ))}
+                      </div>
+                    </div>
+                  )}
                </div>
             </div>
 
             {/* RECOVERY PLAN */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-               <div className="glass-panel p-12 rounded-[56px] border-white/10">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+               <div className="glass-panel p-10 rounded-[48px] border-white/10">
                   <h3 className="text-[11px] font-black uppercase tracking-[0.3em] mb-8 text-emerald-500">
                     <Apple className="w-4 h-4 inline-block mr-3" /> Nutritional Optimization
                   </h3>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                     {result.diet?.slice(0, 4).map((d, i) => (
-                       <div key={i} className="p-5 rounded-2xl bg-emerald-500/5 border border-emerald-500/10 hover:bg-emerald-500/10 transition-all">
-                          <p className="text-[11px] font-black text-white uppercase tracking-tighter mb-1">{d.recommendation}</p>
-                          <p className="text-[9px] text-white/40 font-bold uppercase tracking-widest leading-tight">{d.category}</p>
+                   <div className="space-y-3">
+                     {result.diet?.map((d, i) => (
+                       <div key={i} className="p-4 rounded-xl bg-emerald-500/5 border border-emerald-500/10 hover:bg-emerald-500/20 transition-all">
+                          <p className="text-[10px] font-black text-white uppercase tracking-tighter mb-1">{d.recommendation}</p>
+                          <p className="text-[8px] text-white/40 font-bold uppercase tracking-widest leading-tight">{d.category}</p>
                        </div>
                      ))}
+                   </div>
+                   
+                   {result.special_foods && result.special_foods.length > 0 && (
+                     <div className="mt-6 pt-6 border-t border-emerald-500/10">
+                        <h4 className="text-[9px] font-black uppercase tracking-[0.2em] mb-4 text-emerald-400">Curated Special Foods</h4>
+                        <div className="flex flex-wrap gap-2">
+                           {result.special_foods.map((food, i) => (
+                             <div key={i} className="px-3 py-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-[9px] font-bold text-emerald-300 flex items-center gap-2 group relative">
+                                {food.name}
+                                <span className="absolute -top-8 left-1/2 -translate-x-1/2 w-48 bg-black border border-emerald-500/40 p-2 rounded-xl text-[8px] text-white opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-50 shadow-2xl">{food.benefit}</span>
+                             </div>
+                           ))}
+                        </div>
+                     </div>
+                   )}
+               </div>
+
+               {result.recovery_timeline && result.recovery_timeline.length > 0 && (
+               <div className="glass-panel p-10 rounded-[48px] border-white/10">
+                  <h3 className="text-[11px] font-black uppercase tracking-[0.3em] mb-8 text-cyan-500">
+                    <Activity className="w-4 h-4 inline-block mr-3" /> Recovery Projection
+                  </h3>
+                  <div className="h-[220px]">
+                    <ResponsiveContainer>
+                      <LineChart data={result.recovery_timeline}>
+                        <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" vertical={false} />
+                        <XAxis dataKey="month" tick={{ fill: 'rgba(255,255,255,0.4)', fontSize: 10, fontWeight: 800 }} axisLine={false} tickLine={false} />
+                        <Tooltip cursor={{ stroke: 'rgba(6,182,212,0.5)', strokeWidth: 2 }} contentStyle={{ backgroundColor: 'rgba(0,0,0,0.8)', border: '1px solid rgba(6,182,212,0.2)', borderRadius: '12px' }} />
+                        <Line type="monotone" dataKey="score" stroke="#06b6d4" strokeWidth={4} dot={{ r: 4, fill: '#06b6d4', strokeWidth: 0 }} activeDot={{ r: 6, strokeWidth: 0 }} />
+                      </LineChart>
+                    </ResponsiveContainer>
                   </div>
                </div>
-               <div className="glass-panel p-12 rounded-[56px] border-white/10 text-center">
+               )}
+
+               <div className="glass-panel p-10 rounded-[48px] border-white/10 text-center">
                   <h3 className="text-[11px] font-black uppercase tracking-[0.3em] mb-10 text-violet-500">
                     <Dumbbell className="w-4 h-4 inline-block mr-3" /> Routine Protocol
                   </h3>
-                  <div className="flex justify-center gap-6">
-                    {result.routine?.slice(0, 3).map((r, i) => (
-                      <div key={i} className="w-32 h-32 rounded-full border-2 border-dashed border-violet-500/20 flex flex-col items-center justify-center p-4">
-                        <p className="text-[8px] font-black text-violet-500 uppercase">{r.time}</p>
-                        <p className="text-[9px] font-black text-white uppercase leading-tight mt-1">{r.activity}</p>
+                  <div className="flex flex-col gap-4">
+                    {result.routine?.map((r, i) => (
+                      <div key={i} className="w-full rounded-[24px] border border-dashed border-violet-500/20 bg-violet-500/5 flex items-center p-4 text-left">
+                        <div className="w-12 h-12 rounded-full bg-violet-500/10 flex items-center justify-center mr-4 shrink-0 text-[8px] font-black text-violet-500 uppercase">{r.time}</div>
+                        <div>
+                          <p className="text-[10px] font-black text-white uppercase leading-tight">{r.activity}</p>
+                        </div>
                       </div>
                     ))}
                   </div>

@@ -50,13 +50,13 @@ export default function Signup() {
     <div className="flex-1 w-full flex items-center justify-center p-4 bg-mesh relative overflow-hidden">
       {/* Background Blobs */}
       <div className="blob w-[600px] h-[600px] bg-cyan-500/10 -top-20 -left-20 animate-float-slow" />
-      <div className="blob w-[400px] h-[400px] bg-violet-500/10 -bottom-20 -right-20 animate-float-slow [animation-delay:2s]" />
+      <div className="blob w-[400px] h-[400px] bg-indigo-500/10 -bottom-20 -right-20 animate-float-slow [animation-delay:2s]" />
 
       <motion.div
         initial={{ opacity: 0, y: 30, scale: 0.95 }}
         animate={{ opacity: 1, y: 0, scale: 1 }}
         transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
-        className="w-full max-w-md glass-panel p-5 md:px-6 rounded-[24px] relative z-10 border-white/20 shadow-[-10px_-10px_30px_rgba(255,255,255,0.1),10px_10px_30px_rgba(0,0,0,0.1)] my-2"
+        className="w-full max-w-md glass-panel p-5 md:px-6 rounded-[24px] relative z-10 border-[var(--glass-border)] shadow-xl my-2"
       >
         <div className="text-center mb-4">
           <motion.div
@@ -87,18 +87,18 @@ export default function Signup() {
         )}
 
         <form onSubmit={handleSubmit} className="space-y-3">
-          <div className="p-1 bg-[var(--bg-main)]/50 border border-white/10 rounded-[16px] grid grid-cols-2 gap-1">
+          <div className="p-1 bg-[var(--input-bg)] border border-[var(--input-border)] rounded-[16px] grid grid-cols-2 gap-1">
             <button
               type="button"
               onClick={() => setRole('patient')}
-              className={`py-2 rounded-xl text-[9px] font-black uppercase tracking-[0.15em] transition-all duration-300 ${role === 'patient' ? 'bg-cyan-500 text-white shadow-lg shadow-cyan-500/20' : 'text-[var(--text-muted)] hover:text-[var(--text-main)] hover:bg-white/5'}`}
+              className={`py-2 rounded-xl text-[9px] font-black uppercase tracking-[0.15em] transition-all duration-300 ${role === 'patient' ? 'bg-cyan-500 text-white shadow-lg shadow-cyan-500/20' : 'text-[var(--text-muted)] hover:text-cyan-500 hover:bg-cyan-500/5'}`}
             >
               Patient
             </button>
             <button
               type="button"
               onClick={() => navigate('/lab-signup')}
-              className={`py-2 rounded-xl text-[9px] font-black uppercase tracking-[0.15em] transition-all duration-300 ${role === 'lab' ? 'bg-emerald-600 text-white shadow-lg shadow-emerald-500/20' : 'text-[var(--text-muted)] hover:text-[var(--text-main)] hover:bg-white/5'}`}
+              className={`py-2 rounded-xl text-[9px] font-black uppercase tracking-[0.15em] transition-all duration-300 ${role === 'lab' ? 'bg-emerald-600 text-white shadow-lg shadow-emerald-500/20' : 'text-[var(--text-muted)] hover:text-emerald-500 hover:bg-emerald-500/5'}`}
             >
               Lab
             </button>
@@ -107,13 +107,13 @@ export default function Signup() {
           <div className="space-y-1.5">
             <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[var(--text-muted)] ml-2">Legal Name</label>
             <div className="relative group">
-              <User className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--text-muted)] group-focus-within:text-cyan-500 transition-colors duration-300" />
+              <User className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--text-muted)] opacity-50 group-focus-within:text-cyan-500 transition-colors duration-300" />
               <input
                 type="text"
                 required
                 value={name}
                 onChange={(e) => setName(e.target.value)}
-                className="w-full bg-white/5 border border-white/10 rounded-xl py-2.5 pl-11 pr-4 outline-none focus:border-cyan-500/50 focus:ring-4 focus:ring-cyan-500/5 transition-all text-sm font-bold"
+                className="w-full bg-[var(--input-bg)] border border-[var(--input-border)] rounded-xl py-2.5 pl-11 pr-4 outline-none focus:border-cyan-500/50 focus:bg-[var(--glass-bg)] transition-all text-sm font-bold text-[var(--text-main)] placeholder:text-[var(--text-muted)] placeholder:opacity-50"
                 placeholder="Full Name"
               />
             </div>
@@ -122,13 +122,13 @@ export default function Signup() {
           <div className="space-y-1.5">
             <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[var(--text-muted)] ml-2">Clinical Email</label>
             <div className="relative group">
-              <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--text-muted)] group-focus-within:text-cyan-500 transition-colors duration-300" />
+              <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--text-muted)] opacity-50 group-focus-within:text-cyan-500 transition-colors duration-300" />
               <input
                 type="email"
                 required
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="w-full bg-white/5 border border-white/10 rounded-xl py-2.5 pl-11 pr-4 outline-none focus:border-cyan-500/50 focus:ring-4 focus:ring-cyan-500/5 transition-all text-sm font-bold"
+                className="w-full bg-[var(--input-bg)] border border-[var(--input-border)] rounded-xl py-2.5 pl-11 pr-4 outline-none focus:border-cyan-500/50 focus:bg-[var(--glass-bg)] transition-all text-sm font-bold text-[var(--text-main)] placeholder:text-[var(--text-muted)] placeholder:opacity-50"
                 placeholder="email@clinical.org"
               />
             </div>
@@ -137,13 +137,13 @@ export default function Signup() {
           <div className="space-y-1.5">
             <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[var(--text-muted)] ml-2">Security Key</label>
             <div className="relative group">
-              <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--text-muted)] group-focus-within:text-cyan-500 transition-colors duration-300" />
+              <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--text-muted)] opacity-50 group-focus-within:text-cyan-500 transition-colors duration-300" />
               <input
                 type="password"
                 required
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="w-full bg-white/5 border border-white/10 rounded-xl py-2.5 pl-11 pr-4 outline-none focus:border-cyan-500/50 focus:ring-4 focus:ring-cyan-500/5 transition-all text-sm font-bold"
+                className="w-full bg-[var(--input-bg)] border border-[var(--input-border)] rounded-xl py-2.5 pl-11 pr-4 outline-none focus:border-cyan-500/50 focus:bg-[var(--glass-bg)] transition-all text-sm font-bold text-[var(--text-main)] placeholder:text-[var(--text-muted)] placeholder:opacity-50"
                 placeholder="••••••••"
               />
             </div>
@@ -155,7 +155,7 @@ export default function Signup() {
               id="terms"
               checked={agreed}
               onChange={(e) => setAgreed(e.target.checked)}
-              className="w-4 h-4 rounded-md bg-white/5 border border-white/10 text-cyan-500 focus:ring-offset-0 focus:ring-cyan-500/50 cursor-pointer transition-all"
+              className="w-4 h-4 rounded-md border border-[var(--input-border)] bg-[var(--input-bg)] text-cyan-500 focus:ring-offset-0 focus:ring-cyan-500/50 cursor-pointer transition-all"
             />
             <label htmlFor="terms" className="text-[10px] font-bold text-[var(--text-muted)] cursor-pointer select-none">
               I agree to the <span className="text-cyan-400">Terms of Service</span> & <span className="text-cyan-400">Privacy Protocol</span>
@@ -165,7 +165,7 @@ export default function Signup() {
           <Button
             type="submit"
             disabled={loading || !agreed || password.length < 6}
-            className="w-full h-11 rounded-xl button-premium transition-all flex items-center justify-center gap-2 font-black uppercase tracking-[0.2em] text-[10px] mt-2 disabled:opacity-30 disabled:cursor-not-allowed"
+            className="w-full h-11 rounded-xl button-premium transition-all flex items-center justify-center gap-2 font-black uppercase tracking-[0.2em] text-[10px] mt-2 disabled:opacity-30 disabled:cursor-not-allowed text-white"
           >
             {loading ? (
               <Loader2 className="w-5 h-5 animate-spin text-white" />
@@ -178,16 +178,15 @@ export default function Signup() {
               At least 6 characters required
             </p>
           )}
-
         </form>
 
-        <div className="mt-4 text-center pt-4 border-t border-white/5 space-y-3">
+        <div className="mt-4 text-center pt-4 border-t border-[var(--glass-border)] space-y-3">
           <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-[var(--text-muted)]">
             Already established?{' '}
             <Link to="/login" className="text-cyan-500 hover:text-cyan-400 transition-colors ml-1">Login Here</Link>
           </p>
           <div className="pt-2">
-             <Link to="/lab-signup" className="text-[10px] font-black uppercase tracking-[0.2em] text-emerald-500 hover:text-emerald-400 transition-colors">
+            <Link to="/lab-signup" className="text-[10px] font-black uppercase tracking-[0.2em] text-emerald-500 hover:text-emerald-400 transition-colors">
                Facility Staff? Access Lab Registration
              </Link>
           </div>

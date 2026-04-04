@@ -63,17 +63,18 @@ export default function CompareReports() {
   }, [comparison]);
 
   return (
-    <div className="flex-grow flex flex-col px-6 py-12 text-[var(--text-main)] max-w-5xl mx-auto w-full relative z-10 bg-mesh min-h-screen">
-      <div className="fixed inset-0 bg-transparent -z-10" />
-      <div className="blob w-[600px] h-[600px] bg-cyan-500/10 -top-40 -left-40" />
-      <div className="blob w-[600px] h-[600px] bg-purple-500/10 -bottom-40 -right-40" />
+    <div className="flex-grow flex flex-col px-6 py-12 text-[var(--text-main)] max-w-5xl mx-auto w-full relative z-10 min-h-screen">
+      <div className="fixed inset-0 bg-[var(--bg-main)] -z-20 transition-colors duration-500" />
+      <div className="fixed inset-0 bg-mesh opacity-30 -z-10 pointer-events-none" />
+      <div className="blob w-[600px] h-[600px] bg-cyan-500/5 -top-40 -left-40 blur-[120px] transition-colors duration-500" />
+      <div className="blob w-[600px] h-[600px] bg-purple-500/5 -bottom-40 -right-40 blur-[120px] transition-colors duration-500" />
 
       {/* Header */}
       <motion.div variants={fadeInUp} initial="initial" animate="animate" className="flex items-center gap-6 mb-12">
         <Button
           variant="outline"
           onClick={() => navigate('/patient-dashboard')}
-          className="h-12 w-12 rounded-2xl flex items-center justify-center border-white/10 hover:bg-white/5 backdrop-blur-xl transition-all p-0"
+          className="h-12 w-12 rounded-2xl flex items-center justify-center border-[var(--glass-border)] bg-[var(--glass-bg)] backdrop-blur-xl transition-all p-0"
         >
           <ArrowLeft className="w-5 h-5 text-[var(--text-muted)]" />
         </Button>
@@ -86,10 +87,10 @@ export default function CompareReports() {
       </motion.div>
 
       {/* Main Content */}
-      <motion.div variants={fadeInUp} initial="initial" animate="animate" transition={{ delay: 0.1 }} className="glass-panel p-10 rounded-[40px] relative overflow-hidden min-h-[400px] flex flex-col">
+      <motion.div variants={fadeInUp} initial="initial" animate="animate" transition={{ delay: 0.1 }} className="bg-[var(--glass-bg)] backdrop-blur-3xl p-10 rounded-[40px] relative overflow-hidden border border-[var(--glass-border)] shadow-2xl min-h-[400px] flex flex-col">
         <div className="absolute top-0 right-0 w-64 h-64 bg-cyan-500/5 blur-[80px] -z-10" />
 
-        <div className="flex items-center justify-between mb-8 pb-8 border-b border-white/5">
+        <div className="flex items-center justify-between mb-8 pb-8 border-b border-[var(--glass-border)]">
           <div className="flex items-center gap-4">
             <div className="w-12 h-12 rounded-2xl bg-cyan-500/10 flex items-center justify-center border border-cyan-500/20">
               <TrendingUp className="w-6 h-6 text-cyan-500" />
@@ -127,10 +128,10 @@ export default function CompareReports() {
                 {comparison.health_summary}
               </div>
 
-              <div className="overflow-x-auto rounded-3xl border border-white/10 bg-black/20 shadow-2xl backdrop-blur-xl">
+              <div className="overflow-x-auto rounded-3xl border border-[var(--glass-border)] bg-[var(--input-bg)] shadow-2xl backdrop-blur-xl">
                 <table className="w-full text-left whitespace-nowrap">
                   <thead>
-                    <tr className="bg-white/5 text-[10px] uppercase font-black tracking-widest text-[var(--text-muted)] border-b border-white/10">
+                    <tr className="bg-[var(--bg-main)]/50 text-[10px] uppercase font-black tracking-widest text-[var(--text-muted)] border-b border-[var(--glass-border)]">
                       <th className="px-6 py-4 max-w-[150px] truncate">Parameter</th>
                       <th className="px-6 py-4">Report 1 (New)</th>
                       <th className="px-6 py-4">Report 2</th>
@@ -140,7 +141,7 @@ export default function CompareReports() {
                       <th className="px-6 py-4 text-center">Trend Indicator</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-white/5">
+                  <tbody className="divide-y divide-[var(--glass-border)]">
                     {comparison.table_data?.map((row, idx) => (
                       <tr key={idx} className="hover:bg-white/[0.02] transition-colors">
                         <td className="px-6 py-4 text-xs font-bold text-cyan-400 tracking-wider uppercase max-w-[150px] truncate">{row.parameter}</td>
@@ -172,14 +173,14 @@ export default function CompareReports() {
               {/* Visualizations Module */}
               <div className="mt-12 grid grid-cols-1 lg:grid-cols-2 gap-8">
                 {/* Line Chart */}
-                <div className="glass-panel p-6 rounded-[32px] border border-white/5 bg-black/20 relative shadow-2xl backdrop-blur-xl">
+                <div className="bg-[var(--glass-bg)] p-6 rounded-[32px] border border-[var(--glass-border)] relative shadow-2xl backdrop-blur-xl">
                   <h3 className="text-[10px] font-black tracking-widest uppercase text-cyan-500 mb-6 flex items-center gap-2"><TrendingUp className="w-4 h-4" /> Multi-Report Trend (Line)</h3>
                   <div className="h-64 w-full">
                     <ResponsiveContainer width="100%" height="100%">
                       <LineChart data={chartData}>
-                        <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" vertical={false} />
-                        <XAxis dataKey="name" stroke="rgba(255,255,255,0.2)" fontSize={9} tickLine={false} axisLine={false} tickFormatter={(val) => val?.substring(0, 8) + '...'} />
-                        <YAxis stroke="rgba(255,255,255,0.2)" fontSize={9} tickLine={false} axisLine={false} />
+                        <CartesianGrid strokeDasharray="3 3" stroke="var(--glass-border)" vertical={false} />
+                        <XAxis dataKey="name" stroke="var(--text-muted)" fontSize={9} tickLine={false} axisLine={false} tickFormatter={(val) => val?.substring(0, 8) + '...'} />
+                        <YAxis stroke="var(--text-muted)" fontSize={9} tickLine={false} axisLine={false} />
                         <Tooltip contentStyle={{ backgroundColor: 'rgba(15, 23, 42, 0.9)', borderColor: 'rgba(255,255,255,0.1)', borderRadius: '12px', fontSize: '11px', fontWeight: 'bold' }} />
                         <Legend wrapperStyle={{ fontSize: '10px' }} />
                         <Line type="monotone" dataKey="r3" stroke="#94a3b8" strokeDasharray="5 5" name="Oldest (R3)" dot={{ r: 2 }} activeDot={{ r: 4 }} />
@@ -191,15 +192,15 @@ export default function CompareReports() {
                 </div>
 
                 {/* Bar Chart */}
-                <div className="glass-panel p-6 rounded-[32px] border border-white/5 bg-black/20 relative shadow-2xl backdrop-blur-xl">
+                <div className="bg-[var(--glass-bg)] p-6 rounded-[32px] border border-[var(--glass-border)] relative shadow-2xl backdrop-blur-xl">
                   <h3 className="text-[10px] font-black tracking-widest uppercase text-cyan-500 mb-6 flex items-center gap-2"><PieChart className="w-4 h-4" /> Absolute Variance (Bar)</h3>
                   <div className="h-64 w-full">
                     <ResponsiveContainer width="100%" height="100%">
                       <BarChart data={chartData}>
-                        <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" vertical={false} />
-                        <XAxis dataKey="name" stroke="rgba(255,255,255,0.2)" fontSize={9} tickLine={false} axisLine={false} tickFormatter={(val) => val?.substring(0, 8) + '...'} />
-                        <YAxis stroke="rgba(255,255,255,0.2)" fontSize={9} tickLine={false} axisLine={false} />
-                        <Tooltip cursor={{ fill: 'rgba(255,255,255,0.05)' }} contentStyle={{ backgroundColor: 'rgba(15, 23, 42, 0.9)', borderColor: 'rgba(255,255,255,0.1)', borderRadius: '12px', fontSize: '11px', fontWeight: 'bold' }} />
+                        <CartesianGrid strokeDasharray="3 3" stroke="var(--glass-border)" vertical={false} />
+                        <XAxis dataKey="name" stroke="var(--text-muted)" fontSize={9} tickLine={false} axisLine={false} tickFormatter={(val) => val?.substring(0, 8) + '...'} />
+                        <YAxis stroke="var(--text-muted)" fontSize={9} tickLine={false} axisLine={false} />
+                        <Tooltip cursor={{ fill: 'var(--glass-border)' }} contentStyle={{ backgroundColor: 'var(--bg-main)', borderColor: 'var(--glass-border)', borderRadius: '12px', fontSize: '11px', fontWeight: 'bold', color: 'var(--text-main)' }} />
                         <Legend wrapperStyle={{ fontSize: '10px' }} />
                         <Bar dataKey="r2" fill="#818cf8" name="Previous (R2)" radius={[4, 4, 0, 0]} />
                         <Bar dataKey="r1" fill="#06b6d4" name="Latest (R1)" radius={[4, 4, 0, 0]} />
@@ -209,34 +210,34 @@ export default function CompareReports() {
                 </div>
 
                 {/* Radar Chart */}
-                <div className="glass-panel p-6 rounded-[32px] border border-white/5 bg-black/20 relative shadow-2xl backdrop-blur-xl">
+                <div className="bg-[var(--glass-bg)] p-6 rounded-[32px] border border-[var(--glass-border)] relative shadow-2xl backdrop-blur-xl">
                   <h3 className="text-[10px] font-black tracking-widest uppercase text-cyan-500 mb-6 flex items-center gap-2"><Activity className="w-4 h-4" /> Parameter Distribution (Radar)</h3>
                   <div className="h-64 w-full">
                     <ResponsiveContainer width="100%" height="100%">
                       <RadarChart cx="50%" cy="50%" outerRadius="70%" data={chartData.slice(0, 6)}>
-                        <PolarGrid stroke="rgba(255,255,255,0.1)" />
-                        <PolarAngleAxis dataKey="name" tick={{ fill: 'rgba(255,255,255,0.5)', fontSize: 9 }} />
-                        <PolarRadiusAxis angle={30} domain={[0, 'auto']} tick={{ fill: 'rgba(255,255,255,0.3)', fontSize: 9 }} />
+                        <PolarGrid stroke="var(--glass-border)" />
+                        <PolarAngleAxis dataKey="name" tick={{ fill: 'var(--text-muted)', fontSize: 9 }} />
+                        <PolarRadiusAxis angle={30} domain={[0, 'auto']} tick={{ fill: 'var(--text-muted)', fontSize: 9, opacity: 0.5 }} />
                         <Radar name="Latest (R1)" dataKey="r1" stroke="#06b6d4" fill="#06b6d4" fillOpacity={0.4} />
                         <Radar name="Previous (R2)" dataKey="r2" stroke="#818cf8" fill="#818cf8" fillOpacity={0.4} />
                         <Legend wrapperStyle={{ fontSize: '10px' }} />
-                        <Tooltip contentStyle={{ backgroundColor: 'rgba(15, 23, 42, 0.9)', borderColor: 'rgba(255,255,255,0.1)', borderRadius: '12px', fontSize: '11px', fontWeight: 'bold' }} />
+                        <Tooltip contentStyle={{ backgroundColor: 'var(--bg-main)', borderColor: 'var(--glass-border)', borderRadius: '12px', fontSize: '11px', fontWeight: 'bold', color: 'var(--text-main)' }} />
                       </RadarChart>
                     </ResponsiveContainer>
                   </div>
                 </div>
 
                 {/* Scatter Chart (Bubble) */}
-                <div className="glass-panel p-6 rounded-[32px] border border-white/5 bg-black/20 relative shadow-2xl backdrop-blur-xl">
+                <div className="bg-[var(--glass-bg)] p-6 rounded-[32px] border border-[var(--glass-border)] relative shadow-2xl backdrop-blur-xl">
                   <h3 className="text-[10px] font-black tracking-widest uppercase text-cyan-500 mb-6 flex items-center gap-2"><Activity className="w-4 h-4" /> % Volatility (Scatter Bubble)</h3>
                   <div className="h-64 w-full">
                     <ResponsiveContainer width="100%" height="100%">
                       <ScatterChart margin={{ top: 20, right: 20, bottom: 20, left: -10 }}>
-                        <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
-                        <XAxis type="category" dataKey="name" name="Parameter" stroke="rgba(255,255,255,0.2)" fontSize={9} tickLine={false} axisLine={false} tickFormatter={(val) => val?.substring(0, 5) + '...'} />
-                        <YAxis type="number" dataKey="percentChange" name="% Change" stroke="rgba(255,255,255,0.2)" fontSize={9} tickLine={false} axisLine={false} unit="%" />
+                        <CartesianGrid strokeDasharray="3 3" stroke="var(--glass-border)" />
+                        <XAxis type="category" dataKey="name" name="Parameter" stroke="var(--text-muted)" fontSize={9} tickLine={false} axisLine={false} tickFormatter={(val) => val?.substring(0, 5) + '...'} />
+                        <YAxis type="number" dataKey="percentChange" name="% Change" stroke="var(--text-muted)" fontSize={9} tickLine={false} axisLine={false} unit="%" />
                         <ZAxis type="number" dataKey="absChange" range={[50, 400]} name="Absolute Delta" />
-                        <Tooltip cursor={{ strokeDasharray: '3 3' }} contentStyle={{ backgroundColor: 'rgba(15, 23, 42, 0.9)', borderColor: 'rgba(255,255,255,0.1)', borderRadius: '12px', fontSize: '11px', fontWeight: 'bold' }} />
+                        <Tooltip cursor={{ strokeDasharray: '3 3' }} contentStyle={{ backgroundColor: 'var(--bg-main)', borderColor: 'var(--glass-border)', borderRadius: '12px', fontSize: '11px', fontWeight: 'bold', color: 'var(--text-main)' }} />
                         <Scatter name="Volatility" data={chartData} fill="#f43f5e" />
                       </ScatterChart>
                     </ResponsiveContainer>

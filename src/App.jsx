@@ -15,6 +15,11 @@ import LabLogin from './pages/LabLogin';
 import LabSignup from './pages/LabSignup';
 import LabReportView from './pages/LabReportView';
 import CompareReports from './pages/CompareReports';
+import EcgAnalysisV2 from './pages/analysis/EcgAnalysis';
+import BrainTumorAnalysis from './pages/analysis/BrainTumorAnalysis';
+import LungCancerAnalysis from './pages/analysis/LungCancerAnalysis';
+import KidneyAnalysis from './pages/analysis/KidneyAnalysis';
+import BloodTestAnalysis from './pages/analysis/BloodTestAnalysis';
 import DNABackground from './components/DNABackground';
 import { ThemeProvider } from './context/ThemeContext';
 import { AuthProvider } from './context/AuthContext';
@@ -45,6 +50,11 @@ function Layout() {
             <Route path="/lab-signup" element={<LabSignup />} />
             <Route path="/lab-report/:id" element={<LabReportView />} />
             <Route path="/compare-reports" element={<CompareReports />} />
+            <Route path="/analysis/ecg" element={<EcgAnalysisV2 />} />
+            <Route path="/analysis/brain" element={<BrainTumorAnalysis />} />
+            <Route path="/analysis/lung" element={<LungCancerAnalysis />} />
+            <Route path="/analysis/kidney" element={<KidneyAnalysis />} />
+            <Route path="/analysis/blood" element={<BloodTestAnalysis />} />
           </Routes>
         </main>
         {!isAuthPage && !isPremiumPage && <Footer />}

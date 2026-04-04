@@ -4,9 +4,11 @@ import { MessageSquare, X, Send, Loader2, Bot, User, ChevronDown, ShieldCheck, D
 import medicalKnowledge from '../data/medicalKnowledge.json';
 import { cn } from './Button';
 import { useAuth } from '../context/AuthContext';
+import { useTheme } from '../context/ThemeContext';
 
 export default function HealthChatbot({ patientData, externalOpen, setExternalOpen }) {
   const { user } = useAuth();
+  const { theme } = useTheme();
   const [isOpenInternal, setIsOpenInternal] = useState(false);
 
   const isOpen = externalOpen !== undefined ? externalOpen : isOpenInternal;
@@ -124,10 +126,10 @@ export default function HealthChatbot({ patientData, externalOpen, setExternalOp
         whileHover={{ scale: 1.05, rotate: 5 }}
         whileTap={{ scale: 0.95 }}
         onClick={() => setIsOpen(!isOpen)}
-        className="fixed bottom-10 right-10 w-20 h-20 bg-cyan-600 text-white rounded-[24px] shadow-[0_0_50px_-10px_rgba(6,182,212,0.5)] flex items-center justify-center z-[110] border-4 border-[#020617] group"
+        className="fixed bottom-10 right-10 w-20 h-20 bg-cyan-600 text-white rounded-[24px] shadow-[0_0_50px_-10px_rgba(6,182,212,0.5)] flex items-center justify-center z-[110] border-4 border-[var(--bg-main)] group"
       >
         <div className="absolute inset-0 bg-white/20 opacity-0 group-hover:opacity-100 transition-opacity rounded-[20px]" />
-        {isOpen ? <X className="w-8 h-8" /> : <Sparkles className="w-8 h-8 animate-pulse text-cyan-200" />}
+        {isOpen ? <X className="w-8 h-8" /> : <Sparkles className="w-8 h-8 animate-pulse text-cyan-100" />}
       </motion.button>
 
       <AnimatePresence>
@@ -140,9 +142,9 @@ export default function HealthChatbot({ patientData, externalOpen, setExternalOp
                 initial={{ opacity: 0, y: 50, scale: 0.95 }}
                 animate={{ opacity: 1, y: 0, scale: 1 }}
                 exit={{ opacity: 0, y: 50, scale: 0.95 }}
-                className="w-full max-w-[680px] h-[80vh] glass-panel rounded-[48px] flex flex-col overflow-hidden shadow-[0_0_150px_-30px_rgba(0,0,0,1)] border border-white/20 pointer-events-auto"
+                className="w-full max-w-[680px] h-[80vh] bg-[var(--glass-bg)] backdrop-blur-3xl rounded-[48px] flex flex-col overflow-hidden shadow-[0_0_150px_-30px_rgba(0,0,0,0.5)] border border-[var(--border-subtle)] pointer-events-auto"
               >
-                <div className="bg-[#020617]/80 p-10 border-b border-white/5 relative overflow-hidden group">
+                <div className="bg-[var(--bg-main)]/80 p-10 border-b border-[var(--border-subtle)] relative overflow-hidden group">
                   <div className="absolute inset-0 bg-dashboard-grid opacity-10 pointer-events-none" />
                   <div className="absolute top-0 right-10 w-32 h-32 bg-cyan-500/10 blur-[60px]" />
                   <div className="flex items-center gap-5 relative z-10">
@@ -150,24 +152,24 @@ export default function HealthChatbot({ patientData, externalOpen, setExternalOp
                       <Cpu className="w-9 h-9 text-cyan-500" />
                     </div>
                     <div>
-                      <h3 className="font-black text-2xl tracking-tighter uppercase text-white mb-0.5">STITCH RAG V2</h3>
+                      <h3 className="font-black text-2xl tracking-tighter uppercase text-[var(--text-main)] mb-0.5">JARVIS</h3>
                       <div className="flex items-center gap-2">
                         <span className="w-2 h-2 rounded-full bg-emerald-500 animate-ping" />
-                        <p className="text-[9px] font-black uppercase tracking-[0.3em] text-cyan-400">
-                          {isDoctor ? `Clinical Node: Dr. ${user?.name?.split(' ')[0]}` : "Deep Neural Consensus Active"}
+                        <p className="text-[9px] font-black uppercase tracking-[0.3em] text-cyan-600">
+                          AI Health Assist
                         </p>
                       </div>
                     </div>
                   </div>
                 </div>
 
-                <div ref={scrollRef} className="flex-grow overflow-y-auto p-10 space-y-8 bg-[#020617]/40 custom-scrollbar">
+                <div ref={scrollRef} className="flex-grow overflow-y-auto p-10 space-y-8 bg-[var(--bg-main)]/20 custom-scrollbar">
                   {messages.map((msg, i) => (
                     <motion.div key={i} initial={{ opacity: 0, scale: 0.98 }} animate={{ opacity: 1, scale: 1 }} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-                      <div className={cn("max-w-[85%] p-6 rounded-[32px] text-[11px] font-bold tracking-wider leading-relaxed shadow-2xl relative",
-                        msg.role === 'user' ? "bg-cyan-600 text-white rounded-tr-none" : "glass-panel bg-white/5 text-white/80 rounded-tl-none border-white/10"
+                      <div className={cn("max-w-[85%] p-6 rounded-[32px] text-[11px] font-bold tracking-wider leading-relaxed shadow-xl relative",
+                        msg.role === 'user' ? "bg-cyan-600 text-white rounded-tr-none" : "bg-[var(--input-bg)] text-[var(--text-main)] rounded-tl-none border border-[var(--input-border)]"
                       )}>
-                        {msg.role === 'assistant' && <div className="absolute -left-2 -top-2 w-5 h-5 bg-[#020617] border border-cyan-500/50 rounded-lg flex items-center justify-center"><Bot className="w-3 h-3 text-cyan-500" /></div>}
+                        {msg.role === 'assistant' && <div className="absolute -left-2 -top-2 w-5 h-5 bg-[var(--bg-main)] border border-cyan-500/50 rounded-lg flex items-center justify-center"><Bot className="w-3 h-3 text-cyan-600" /></div>}
                         {msg.content}
                       </div>
                     </motion.div>
@@ -175,7 +177,7 @@ export default function HealthChatbot({ patientData, externalOpen, setExternalOp
                   {loading && (
                     <div className="space-y-4">
                       <div className="flex justify-start">
-                        <div className="glass-panel p-6 rounded-[32px] rounded-tl-none bg-white/5 border-white/10 italic text-[10px] text-cyan-400/60 font-black animate-pulse uppercase tracking-[0.2em] flex items-center gap-3">
+                        <div className="p-6 rounded-[32px] rounded-tl-none bg-[var(--input-bg)] border border-[var(--input-border)] italic text-[10px] text-cyan-600 font-black animate-pulse uppercase tracking-[0.2em] flex items-center gap-3 shadow-sm">
                           <Database className="w-3 h-3" /> {ragState}
                         </div>
                       </div>
@@ -183,20 +185,20 @@ export default function HealthChatbot({ patientData, externalOpen, setExternalOp
                   )}
                 </div>
 
-                <div className="p-10 bg-[#020617]/90 border-t border-white/5 backdrop-blur-3xl">
+                <div className="p-10 bg-[var(--bg-main)]/90 border-t border-[var(--border-subtle)] backdrop-blur-3xl">
                   <div className="flex gap-4 items-center">
                     <div className="flex-grow relative">
                       <input type="text" value={input} onChange={(e) => setInput(e.target.value)} onKeyPress={(e) => e.key === 'Enter' && handleSend()} placeholder="Query Biological Archive..."
-                        className="w-full bg-white/5 border border-white/10 rounded-[24px] py-5 px-8 outline-none focus:border-cyan-500/50 focus:bg-white/10 text-xs font-black uppercase tracking-widest text-white transition-all placeholder:text-white/20" />
+                        className="w-full bg-[var(--input-bg)] border border-[var(--input-border)] rounded-[24px] py-5 px-8 outline-none focus:border-cyan-500/50 focus:bg-[var(--input-bg)] text-xs font-black uppercase tracking-widest text-[var(--text-main)] transition-all placeholder:text-[var(--text-muted)] opacity-50" />
                     </div>
                     <button onClick={handleSend} disabled={!input.trim() || loading}
                       className="w-16 h-16 rounded-[24px] bg-cyan-600 text-white flex items-center justify-center shadow-2xl hover:bg-cyan-500 transition-all disabled:opacity-30 group">
                       <Send className="w-6 h-6 group-hover:translate-x-1 group-hover:-translate-y-1 transition-transform" />
                     </button>
                   </div>
-                  <div className="mt-6 flex items-center justify-center gap-3 opacity-20 group">
-                    <ShieldCheck className="w-4 h-4 text-cyan-500" />
-                    <p className="text-[9px] font-black uppercase tracking-[0.4em] text-cyan-500">End-to-End Encrypted RAG Tunnel</p>
+                   <div className="mt-6 flex items-center justify-center gap-3 opacity-40 group">
+                    <ShieldCheck className="w-4 h-4 text-cyan-600" />
+                    <p className="text-[9px] font-black uppercase tracking-[0.4em] text-cyan-600">End-to-End Encrypted RAG Tunnel</p>
                   </div>
                 </div>
               </motion.div>

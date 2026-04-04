@@ -107,14 +107,17 @@ export default function EcgAnalysis() {
       const formData = new FormData();
       formData.append('image', maskedFile);
 
-      const response = await fetch("http://127.0.0.1:5000/analyze-ecg", {
-        method: "POST",
-        body: formData,
-      });
-
-      if (!response.ok) throw new Error(`Server error: ${response.statusText}`);
-      const data = await response.json();
-      if (data.error) throw new Error(data.error);
+      let data;
+      try {
+        setPrivacyStep('Running Signal Processing Engine...');
+        const response = await fetch("http://127.0.0.1:5000/analyze-ecg-signal", {
+          method: "POST",
+          body: formData,
+        });
+        if (!response.ok) throw new Error(`ECG engines failed: ${response.statusText}`);
+        data = await response.json();
+        if (data.error) throw new Error(data.error);
+      } catch (err) { throw err; }
       setResult(data);
     } catch (err) { setError("Analysis failed: " + err.message); }
     finally { setAnalyzing(false); setPrivacyStep(''); }

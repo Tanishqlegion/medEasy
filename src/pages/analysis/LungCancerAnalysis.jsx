@@ -31,6 +31,7 @@ Classification: ${modelOutput.prediction} | Raw: ${modelOutput.prediction_raw} |
 Provide a clinical analysis CONSISTENT with the model's classification: "${modelOutput.prediction}".
 If "Adenocarcinoma", "Large Cell Carcinoma", or "Squamous Cell Carcinoma" — treat as malignant.
 If "Normal" — treat as benign.
+CRITICAL RULE: If the confidence is < 60.0% (${(modelOutput.confidence * 100).toFixed(1) || 0}%), you MUST state "Please consider consulting a doctor immediately due to low AI certainty" in the summary, and set the overall_verdict to "CONSULT DOCTOR".
 Output strict JSON only (no markdown):
 {
   "summary": "2-sentence clinical interpretation consistent with: ${modelOutput.prediction}",
@@ -178,14 +179,13 @@ export default function LungCancerAnalysis({ report, token, onComplete }) {
         <Wind className="w-8 h-8 text-violet-500 absolute inset-0 m-auto" />
       </div>
       <div className="text-center">
-        <p className="text-lg font-black uppercase tracking-tighter text-white mb-2">Lung CT Analysis</p>
+        <p className="text-lg font-black uppercase tracking-tighter text-[var(--text-main)] mb-2">Lung CT Analysis</p>
         <p className="text-[10px] font-black uppercase tracking-[0.3em] text-violet-400 animate-pulse">{step}</p>
         {modelOutput && (
           <div className={cn('mt-4 px-6 py-3 rounded-2xl border', isMalignant ? 'bg-rose-500/10 border-rose-500/20' : 'bg-emerald-500/10 border-emerald-500/20')}>
             <p className={cn('text-[10px] font-black uppercase tracking-widest', isMalignant ? 'text-rose-400' : 'text-emerald-400')}>
               {modelOutput.prediction}
             </p>
-            <p className="text-[9px] text-white/40 uppercase mt-1"></p>
           </div>
         )}
       </div>
@@ -213,8 +213,9 @@ export default function LungCancerAnalysis({ report, token, onComplete }) {
       <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="space-y-6">
 
         {/* Hero */}
-        <div className={cn('p-8 rounded-[32px] border flex items-center gap-6',
-          isMalignant ? 'bg-rose-500/5 border-rose-500/30' : 'bg-violet-500/5 border-violet-500/20')}>
+        <div className={cn('p-8 rounded-[32px] border flex items-center gap-6 backdrop-blur-3xl shadow-xl relative overflow-hidden',
+          isMalignant ? 'bg-[var(--glass-bg)] border-rose-500/30' : 'bg-[var(--glass-bg)] border-violet-500/20')}>
+          <div className="absolute inset-0 bg-current opacity-5 pointer-events-none" />
           <div className="w-16 h-16 rounded-[20px] flex items-center justify-center font-black text-2xl text-white shadow-xl shrink-0"
                style={{ background: `linear-gradient(135deg, ${accentColor}, ${accentColor}88)` }}>
             {analysis.health_score}
@@ -231,64 +232,62 @@ export default function LungCancerAnalysis({ report, token, onComplete }) {
                 </span>
               )}
               {isMalignant && (
-                <span className="px-3 py-1.5 rounded-xl text-[9px] font-black uppercase tracking-widest border border-rose-500/30 bg-rose-600 text-white animate-pulse">
+                <span className="px-3 py-1.5 rounded-xl text-[9px] font-black uppercase tracking-widest border border-rose-500/30 bg-rose-600 text-white animate-pulse shadow-lg shadow-rose-500/20">
                   ⚠ MALIGNANCY DETECTED
                 </span>
               )}
             </div>
-            <p className="text-sm font-bold text-white leading-snug">{analysis.summary}</p>
+            <p className="text-sm font-bold text-[var(--text-main)] leading-snug">{analysis.summary}</p>
           </div>
         </div>
 
         {/* Three column */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           {modelOutput && (
-            <div className="glass-panel p-6 rounded-[28px] border-white/5 space-y-3">
+            <div className="bg-[var(--glass-bg)] p-6 rounded-[28px] border border-[var(--glass-border)] backdrop-blur-3xl shadow-lg space-y-3">
               <h3 className="text-[10px] font-black uppercase tracking-[0.3em] text-violet-400 flex items-center gap-2">
                 <Activity className="w-4 h-4" /> EfficientNet-B0 Output
               </h3>
-              <div className={cn('p-4 rounded-[16px] border', isMalignant ? 'bg-rose-500/5 border-rose-500/20' : 'bg-emerald-500/5 border-emerald-500/20')}>
-                <p className="text-[9px] font-black uppercase text-white/30 mb-1">Classification</p>
+              <div className={cn('p-4 rounded-[16px] border bg-[var(--input-bg)]', isMalignant ? 'border-rose-500/20' : 'border-emerald-500/20')}>
+                <p className="text-[9px] font-black uppercase text-[var(--text-muted)] mb-1">Classification</p>
                 <p className={cn('text-base font-black uppercase', isMalignant ? 'text-rose-400' : 'text-emerald-400')}>{modelOutput.prediction}</p>
               </div>
 
-              <p className="text-[9px] text-white/40 leading-relaxed">{modelOutput.reasoning}</p>
+              <p className="text-[9px] text-[var(--text-muted)] leading-relaxed">{modelOutput.reasoning}</p>
             </div>
           )}
 
-          <div className="glass-panel p-6 rounded-[28px] border-white/5">
+          <div className="bg-[var(--glass-bg)] p-6 rounded-[28px] border border-[var(--glass-border)] backdrop-blur-3xl shadow-lg">
             <h3 className="text-[10px] font-black uppercase tracking-[0.3em] text-violet-400 mb-4 flex items-center gap-2">
               <Shield className="w-4 h-4" /> Risk Profile
             </h3>
             <div className="h-[180px]">
               <ResponsiveContainer>
                 <RadarChart data={riskData}>
-                  <PolarGrid stroke="rgba(255,255,255,0.05)" />
-                  <PolarAngleAxis dataKey="name" tick={{ fill: 'rgba(255,255,255,0.4)', fontSize: 9, fontWeight: 900 }} />
+                  <PolarGrid stroke="var(--glass-border)" />
+                  <PolarAngleAxis dataKey="name" tick={{ fill: 'var(--text-muted)', fontSize: 9, fontWeight: 900 }} />
                   <Radar dataKey="value" stroke={accentColor} fill={accentColor} fillOpacity={0.2} />
                 </RadarChart>
               </ResponsiveContainer>
             </div>
           </div>
 
-          <div className="glass-panel p-6 rounded-[28px] border-white/5 flex flex-col items-center justify-center">
-            <p className="text-[9px] font-black text-white/30 uppercase tracking-widest">Model certainty</p>
+          <div className="glass-panel p-6 rounded-[28px] border-[var(--border-subtle)] flex flex-col items-center justify-center">
+            <p className="text-[9px] font-black text-[var(--text-muted)] uppercase tracking-widest">Model certainty</p>
           </div>
         </div>
 
-        {/* Parameters */}
-        {analysis.parameters?.length > 0 && (
-          <div className="glass-panel p-8 rounded-[32px] border-white/5">
+          <div className="glass-panel p-8 rounded-[32px] border-[var(--border-subtle)]">
             <h3 className="text-[10px] font-black uppercase tracking-[0.3em] text-violet-400 mb-6 flex items-center gap-2">
               <TrendingUp className="w-4 h-4" /> Pulmonological Parameters
             </h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
               {analysis.parameters.map((p, i) => (
-                <div key={i} className="p-4 rounded-[16px] bg-white/[0.03] border border-white/5 flex justify-between items-center">
+                <div key={i} className="p-4 rounded-[16px] bg-[var(--input-bg)] border border-[var(--border-subtle)] flex justify-between items-center group hover:bg-[var(--bg-main)]/50 transition-all">
                   <div>
-                    <p className="text-[10px] font-black text-white uppercase">{p.name}</p>
+                    <p className="text-[10px] font-black text-[var(--text-main)] uppercase">{p.name}</p>
                     <p className="text-xs font-black text-violet-400">{p.value}</p>
-                    {p.interpretation && <p className="text-[9px] text-white/30 mt-0.5">{p.interpretation}</p>}
+                    {p.interpretation && <p className="text-[9px] text-[var(--text-muted)] mt-0.5 group-hover:text-[var(--text-main)] transition-colors">{p.interpretation}</p>}
                   </div>
                   <span className={cn('text-[8px] font-black px-2 py-0.5 rounded-full uppercase shrink-0 ml-3',
                     p.status === 'Normal' ? 'bg-emerald-500/20 text-emerald-400' :
@@ -298,20 +297,18 @@ export default function LungCancerAnalysis({ report, token, onComplete }) {
               ))}
             </div>
           </div>
-        )}
 
-        {/* Staging + Next Steps */}
         {analysis.staging_notes && analysis.staging_notes !== 'N/A' && (
-          <div className={cn('glass-panel p-6 rounded-[28px] border', isMalignant ? 'border-rose-500/20 bg-rose-500/[0.03]' : 'border-white/5')}>
+          <div className={cn('glass-panel p-6 rounded-[28px] border', isMalignant ? 'border-rose-500/20 bg-rose-500/[0.03]' : 'border-[var(--border-subtle)]')}>
             <h3 className="text-[10px] font-black uppercase tracking-[0.3em] text-rose-400 mb-3 flex items-center gap-2">
               <ShieldAlert className="w-4 h-4" /> Staging Assessment
             </h3>
-            <p className="text-sm text-white/60 leading-relaxed">{analysis.staging_notes}</p>
+            <p className="text-sm text-[var(--text-muted)] leading-relaxed">{analysis.staging_notes}</p>
           </div>
         )}
 
         {analysis.next_steps?.length > 0 && (
-          <div className="glass-panel p-6 rounded-[28px] border-white/5">
+          <div className="glass-panel p-6 rounded-[28px] border-[var(--border-subtle)]">
             <h3 className="text-[10px] font-black uppercase tracking-[0.3em] text-rose-400 mb-4 flex items-center gap-2">
               <AlertTriangle className="w-4 h-4" /> Immediate Next Steps
             </h3>
@@ -319,7 +316,7 @@ export default function LungCancerAnalysis({ report, token, onComplete }) {
               {analysis.next_steps.map((s, i) => (
                 <div key={i} className="flex gap-3 p-3 rounded-[14px] bg-rose-500/5 border border-rose-500/10">
                   <span className="text-rose-500 font-black shrink-0">{i + 1}.</span>
-                  <p className="text-[10px] font-black text-white/70 uppercase">{s}</p>
+                  <p className="text-[10px] font-black text-[var(--text-muted)] uppercase">{s}</p>
                 </div>
               ))}
             </div>
@@ -329,7 +326,7 @@ export default function LungCancerAnalysis({ report, token, onComplete }) {
         {/* Diet + Routine */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {analysis.diet?.length > 0 && (
-            <div className="glass-panel p-6 rounded-[28px] border-white/5">
+            <div className="glass-panel p-6 rounded-[28px] border-[var(--border-subtle)]">
               <h3 className="text-[10px] font-black uppercase tracking-[0.3em] text-emerald-400 mb-4 flex items-center gap-2">
                 <Apple className="w-4 h-4" /> Nutritional Support
               </h3>
@@ -338,8 +335,8 @@ export default function LungCancerAnalysis({ report, token, onComplete }) {
                   <div key={i} className="flex gap-3 p-3 rounded-[14px] bg-emerald-500/5 border border-emerald-500/10">
                     <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0 mt-0.5" />
                     <div>
-                      <p className="text-[10px] font-black text-white uppercase">{d.recommendation}</p>
-                      <p className="text-[9px] text-white/30 mt-0.5">{d.reason}</p>
+                      <p className="text-[10px] font-black text-[var(--text-main)] uppercase">{d.recommendation}</p>
+                      <p className="text-[9px] text-[var(--text-muted)] mt-0.5">{d.reason}</p>
                     </div>
                   </div>
                 ))}
@@ -347,7 +344,7 @@ export default function LungCancerAnalysis({ report, token, onComplete }) {
             </div>
           )}
           {analysis.routine?.length > 0 && (
-            <div className="glass-panel p-6 rounded-[28px] border-white/5">
+            <div className="glass-panel p-6 rounded-[28px] border-[var(--border-subtle)]">
               <h3 className="text-[10px] font-black uppercase tracking-[0.3em] text-amber-400 mb-4 flex items-center gap-2">
                 <Clock className="w-4 h-4" /> Routine Protocol
               </h3>
@@ -356,8 +353,8 @@ export default function LungCancerAnalysis({ report, token, onComplete }) {
                   <div key={i} className="flex gap-4 p-3 rounded-[14px] bg-amber-500/5 border border-amber-500/10">
                     <p className="text-[9px] font-black text-amber-400 uppercase w-16 shrink-0">{r.time}</p>
                     <div>
-                      <p className="text-[10px] font-black text-white uppercase">{r.activity}</p>
-                      {r.importance && <p className="text-[9px] text-white/30 mt-0.5">{r.importance}</p>}
+                      <p className="text-[10px] font-black text-[var(--text-main)] uppercase">{r.activity}</p>
+                      {r.importance && <p className="text-[9px] text-[var(--text-muted)] mt-0.5">{r.importance}</p>}
                     </div>
                   </div>
                 ))}
@@ -366,9 +363,9 @@ export default function LungCancerAnalysis({ report, token, onComplete }) {
           )}
         </div>
 
-        <div className="p-6 rounded-[24px] border border-white/5 flex items-center gap-4 opacity-40">
+        <div className="p-6 rounded-[24px] border border-[var(--border-subtle)] flex items-center gap-4 opacity-40">
           <ShieldCheck className="w-6 h-6 text-violet-500 shrink-0" />
-          <p className="text-[9px] font-bold uppercase tracking-wider text-white/60 leading-relaxed">
+          <p className="text-[9px] font-bold uppercase tracking-wider text-[var(--text-muted)] leading-relaxed">
             Powered by lung_cancer_model.pkl (EfficientNet-B0, 224×224) → Neural Llama-4 Scout. Consult a certified oncologist before any treatment decisions.
           </p>
         </div>

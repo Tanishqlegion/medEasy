@@ -56,7 +56,7 @@ export default function LabSignup() {
                 initial={{ opacity: 0, y: 30, scale: 0.95 }}
                 animate={{ opacity: 1, y: 0, scale: 1 }}
                 transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
-                className="w-full max-w-md glass-panel p-5 md:px-6 rounded-[24px] relative z-10 border-emerald-500/20 shadow-[-10px_-10px_30px_rgba(16,185,129,0.05),10px_10px_30px_rgba(0,0,0,0.2)] flex flex-col max-h-[95vh] overflow-y-auto hide-scrollbar"
+                className="w-full max-w-md glass-panel p-5 md:px-6 rounded-[24px] relative z-10 border border-[var(--glass-border)] shadow-2xl flex flex-col max-h-[95vh] overflow-y-auto hide-scrollbar"
             >
                 <div className="text-center mb-4 shrink-0">
                     <motion.div
@@ -87,11 +87,11 @@ export default function LabSignup() {
                 )}
 
                 <form onSubmit={handleSubmit} className="space-y-4">
-                    <div className="p-1 bg-[var(--bg-main)]/50 border border-white/10 rounded-[16px] grid grid-cols-2 gap-1 mb-2">
+                    <div className="p-1 bg-[var(--input-bg)] border border-[var(--input-border)] rounded-[16px] grid grid-cols-2 gap-1 mb-2">
                         <button
                             type="button"
                             onClick={() => navigate('/signup')}
-                            className="py-2 mb-0 rounded-xl text-[9px] font-black uppercase tracking-[0.15em] transition-all duration-300 text-[var(--text-muted)] hover:text-[var(--text-main)] hover:bg-white/5"
+                            className="py-2 mb-0 rounded-xl text-[9px] font-black uppercase tracking-[0.15em] transition-all duration-300 text-[var(--text-muted)] hover:text-cyan-500 hover:bg-cyan-500/5"
                         >
                             Patient
                         </button>
@@ -112,7 +112,7 @@ export default function LabSignup() {
                                 required
                                 value={labName}
                                 onChange={(e) => setLabName(e.target.value)}
-                                className="w-full bg-white/5 border border-white/10 rounded-2xl py-3 pl-11 pr-4 outline-none focus:border-emerald-500/50 focus:ring-4 focus:ring-emerald-500/5 transition-all text-sm font-bold placeholder:text-[var(--text-muted)]/40"
+                                className="w-full bg-[var(--input-bg)] border border-[var(--input-border)] rounded-2xl py-3 pl-11 pr-4 outline-none focus:border-emerald-500/50 focus:ring-4 focus:ring-emerald-500/5 transition-all text-sm font-bold text-[var(--text-main)] placeholder:text-[var(--text-muted)]/40"
                                 placeholder="Diagnostics Lab"
                             />
                         </div>
@@ -126,12 +126,11 @@ export default function LabSignup() {
                             required
                             value={city}
                             onChange={(e) => setCity(e.target.value)}
-                            className="w-full bg-[#030712] border border-white/10 rounded-2xl py-3 px-4 outline-none focus:border-emerald-500/50 transition-all text-sm font-bold cursor-pointer text-white"
-                            style={{ colorScheme: 'dark' }}
+                            className="w-full bg-[var(--input-bg)] border border-[var(--input-border)] rounded-2xl py-3 px-4 outline-none focus:border-emerald-500/50 transition-all text-sm font-bold cursor-pointer text-[var(--text-main)] appearance-none"
                         >
-                            <option value="" disabled style={{ background: '#020617', color: '#666' }}>Select your city...</option>
+                            <option value="" disabled className="bg-[var(--bg-main)] text-[var(--text-muted)]">Select your city...</option>
                             {CITIES.map(c => (
-                                <option key={c} value={c} style={{ background: '#020617', color: 'white' }}>{c}</option>
+                                <option key={c} value={c} className="bg-[var(--bg-main)] text-[var(--text-main)]">{c}</option>
                             ))}
                         </select>
                     </div>
@@ -145,7 +144,7 @@ export default function LabSignup() {
                                 required
                                 value={labId}
                                 onChange={(e) => setLabId(e.target.value)}
-                                className="w-full bg-white/5 border border-white/10 rounded-2xl py-3 pl-11 pr-4 outline-none focus:border-emerald-500/50 focus:ring-4 focus:ring-emerald-500/5 transition-all text-sm font-bold placeholder:text-[var(--text-muted)]/40"
+                                className="w-full bg-[var(--input-bg)] border border-[var(--input-border)] rounded-2xl py-3 pl-11 pr-4 outline-none focus:border-emerald-500/50 focus:ring-4 focus:ring-emerald-500/5 transition-all text-sm font-bold text-[var(--text-main)] placeholder:text-[var(--text-muted)]/40"
                                 placeholder="lab@facility.org"
                             />
                         </div>
@@ -160,7 +159,7 @@ export default function LabSignup() {
                                 required
                                 value={password}
                                 onChange={(e) => setPassword(e.target.value)}
-                                className="w-full bg-white/5 border border-white/10 rounded-2xl py-3 pl-11 pr-4 outline-none focus:border-emerald-500/50 focus:ring-4 focus:ring-emerald-500/5 transition-all text-sm font-bold placeholder:text-[var(--text-muted)]/40"
+                                className="w-full bg-[var(--input-bg)] border border-[var(--input-border)] rounded-2xl py-3 pl-11 pr-4 outline-none focus:border-emerald-500/50 focus:ring-4 focus:ring-emerald-500/5 transition-all text-sm font-bold text-[var(--text-main)] placeholder:text-[var(--text-muted)]/40"
                                 placeholder="••••••••"
                             />
                         </div>

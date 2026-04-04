@@ -55,7 +55,7 @@ export default function LabLogin() {
                 initial={{ opacity: 0, y: 30, scale: 0.95 }}
                 animate={{ opacity: 1, y: 0, scale: 1 }}
                 transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
-                className="w-full max-w-md glass-panel p-6 md:px-8 rounded-[30px] relative z-10 border-emerald-500/20 shadow-[-10px_-10px_30px_rgba(16,185,129,0.05),10px_10px_30px_rgba(0,0,0,0.2)]"
+                className="w-full max-w-md glass-panel p-6 md:px-8 rounded-[30px] relative z-10 border-[var(--glass-border)] shadow-2xl"
             >
                 <div className="text-center mb-6">
                     <motion.div
@@ -95,7 +95,7 @@ export default function LabLogin() {
                                 required
                                 value={labId}
                                 onChange={(e) => setLabId(e.target.value)}
-                                className="w-full bg-white/5 border border-white/10 rounded-2xl py-3 pl-11 pr-4 outline-none focus:border-emerald-500/50 focus:ring-4 focus:ring-emerald-500/5 transition-all text-sm font-bold placeholder:text-[var(--text-muted)]/40"
+                                className="w-full bg-[var(--input-bg)] border border-[var(--input-border)] rounded-2xl py-3 pl-11 pr-4 outline-none focus:border-emerald-500/50 focus:ring-4 focus:ring-emerald-500/5 transition-all text-sm font-bold text-[var(--text-main)] placeholder:text-[var(--text-muted)]/40"
                                 placeholder="lab@facility.org"
                             />
                         </div>
@@ -110,7 +110,7 @@ export default function LabLogin() {
                                 required
                                 value={password}
                                 onChange={(e) => setPassword(e.target.value)}
-                                className="w-full bg-white/5 border border-white/10 rounded-2xl py-3 pl-11 pr-4 outline-none focus:border-emerald-500/50 focus:ring-4 focus:ring-emerald-500/5 transition-all text-sm font-bold placeholder:text-[var(--text-muted)]/40"
+                                className="w-full bg-[var(--input-bg)] border border-[var(--input-border)] rounded-2xl py-3 pl-11 pr-4 outline-none focus:border-emerald-500/50 focus:ring-4 focus:ring-emerald-500/5 transition-all text-sm font-bold text-[var(--text-main)] placeholder:text-[var(--text-muted)]/40"
                                 placeholder="••••••••"
                             />
                         </div>
@@ -139,7 +139,7 @@ export default function LabLogin() {
 
                 </form>
 
-                <div className="mt-8 text-center pt-6 border-t border-white/5 space-y-4">
+                <div className="mt-8 text-center pt-6 border-t border-[var(--glass-border)] space-y-4">
                     <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-[var(--text-muted)]">
                         Not registered yet?{' '}
                         <Link to="/lab-signup" className="text-emerald-500 hover:text-emerald-400 transition-colors ml-1">Register Facility</Link>

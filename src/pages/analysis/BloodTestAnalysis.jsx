@@ -155,7 +155,7 @@ export default function BloodTestAnalysis({ report, token, onComplete }) {
         <FlaskConical className="w-8 h-8 text-cyan-500 absolute inset-0 m-auto" />
       </div>
       <div className="text-center">
-        <p className="text-lg font-black uppercase tracking-tighter text-white mb-2">CBC Blood Analysis</p>
+        <p className="text-lg font-black uppercase tracking-tighter text-[var(--text-main)] mb-2">CBC Blood Analysis</p>
         <p className="text-[10px] font-black uppercase tracking-[0.3em] text-cyan-400 animate-pulse">{step}</p>
       </div>
     </div>
@@ -175,8 +175,8 @@ export default function BloodTestAnalysis({ report, token, onComplete }) {
   if (!analysis) return (
     <div className="flex flex-col items-center justify-center py-16 gap-6">
       <FlaskConical className="w-12 h-12 text-cyan-500/30" />
-      <p className="text-[10px] font-black uppercase tracking-[0.3em] text-white/20">Awaiting CBC analysis</p>
-      <button onClick={() => { setAttempted(false); }} className="px-8 py-3 rounded-2xl bg-cyan-600 text-white text-[10px] font-black uppercase tracking-widest hover:bg-cyan-500 transition-all">Run Analysis</button>
+      <p className="text-[10px] font-black uppercase tracking-[0.3em] text-[var(--text-muted)]">Awaiting CBC analysis</p>
+      <button onClick={() => { setAttempted(false); }} className="px-8 py-3 rounded-2xl bg-cyan-600 text-white text-[10px] font-black uppercase tracking-widest hover:bg-cyan-500 transition-all shadow-lg shadow-cyan-500/20">Run Analysis</button>
     </div>
   );
 
@@ -184,7 +184,8 @@ export default function BloodTestAnalysis({ report, token, onComplete }) {
     <AnimatePresence>
       <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="space-y-6">
         {/* Summary Header */}
-        <div className="p-8 rounded-[32px] bg-cyan-500/5 border border-cyan-500/20 flex items-center gap-6">
+        <div className="p-8 rounded-[32px] bg-[var(--glass-bg)] border border-[var(--glass-border)] flex items-center gap-6 relative overflow-hidden backdrop-blur-3xl shadow-xl">
+          <div className="absolute inset-0 bg-cyan-500/5 -z-10" />
           <div className="w-16 h-16 rounded-[20px] bg-gradient-to-br from-cyan-500 to-blue-600 flex items-center justify-center font-black text-2xl text-white shadow-xl shadow-cyan-500/30 shrink-0">
             {analysis.health_score}
           </div>
@@ -193,35 +194,35 @@ export default function BloodTestAnalysis({ report, token, onComplete }) {
               <span className={cn('px-4 py-1.5 rounded-xl text-[9px] font-black uppercase tracking-widest border', VERDICT_COLOR[analysis.overall_verdict] || VERDICT_COLOR.STABLE)}>
                 {analysis.overall_verdict || 'STABLE'}
               </span>
-              <span className="text-[9px] font-black uppercase tracking-widest text-white/30">CBC Report · Neural Llama-4 Scout</span>
+              <span className="text-[9px] font-black uppercase tracking-widest text-[var(--text-muted)]">CBC Report · Neural Llama-4 Scout</span>
             </div>
-            <p className="text-sm font-bold text-white leading-snug">{analysis.summary}</p>
+            <p className="text-sm font-bold text-[var(--text-main)] leading-snug">{analysis.summary}</p>
           </div>
         </div>
 
         {/* Charts Row */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div className="glass-panel p-6 rounded-[28px] border-white/5">
+          <div className="bg-[var(--glass-bg)] p-6 rounded-[28px] border border-[var(--glass-border)] backdrop-blur-3xl shadow-lg">
             <h3 className="text-[10px] font-black uppercase tracking-[0.3em] text-cyan-400 mb-4 flex items-center gap-2"><Shield className="w-4 h-4" /> Risk Profile</h3>
             <div className="h-[180px]">
               <ResponsiveContainer>
                 <RadarChart data={riskData}>
-                  <PolarGrid stroke="rgba(255,255,255,0.05)" />
-                  <PolarAngleAxis dataKey="name" tick={{ fill: 'rgba(255,255,255,0.4)', fontSize: 9, fontWeight: 900 }} />
+                  <PolarGrid stroke="var(--glass-border)" />
+                  <PolarAngleAxis dataKey="name" tick={{ fill: 'var(--text-muted)', fontSize: 9, fontWeight: 900 }} />
                   <Radar dataKey="value" stroke="#06b6d4" fill="#06b6d4" fillOpacity={0.2} />
                 </RadarChart>
               </ResponsiveContainer>
             </div>
           </div>
-          <div className="glass-panel p-6 rounded-[28px] border-white/5">
+          <div className="bg-[var(--glass-bg)] p-6 rounded-[28px] border border-[var(--glass-border)] backdrop-blur-3xl shadow-lg">
             <h3 className="text-[10px] font-black uppercase tracking-[0.3em] text-cyan-400 mb-4 flex items-center gap-2"><TrendingUp className="w-4 h-4" /> Parameter Status</h3>
             <div className="h-[180px]">
               <ResponsiveContainer>
                 <BarChart data={barData} barSize={14}>
-                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(255,255,255,0.03)" />
-                  <XAxis dataKey="name" tick={{ fill: 'rgba(255,255,255,0.3)', fontSize: 8, fontWeight: 800 }} axisLine={false} tickLine={false} />
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--glass-border)" />
+                  <XAxis dataKey="name" tick={{ fill: 'var(--text-muted)', fontSize: 8, fontWeight: 800 }} axisLine={false} tickLine={false} />
                   <YAxis hide domain={[0, 3]} />
-                  <Tooltip contentStyle={{ backgroundColor: 'rgba(15,23,42,0.9)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 12, fontSize: 10 }} />
+                  <Tooltip contentStyle={{ backgroundColor: 'var(--bg-main)', border: '1px solid var(--glass-border)', borderRadius: 12, fontSize: 10, color: 'var(--text-main)' }} />
                   <Bar dataKey="status" radius={[4, 4, 0, 0]}>
                     {barData.map((e, i) => <Cell key={i} fill={e.status === 1 ? '#10b981' : e.status === 2 ? '#f59e0b' : '#ef4444'} />)}
                   </Bar>
@@ -233,13 +234,13 @@ export default function BloodTestAnalysis({ report, token, onComplete }) {
 
         {/* Parameters */}
         {analysis.parameters?.length > 0 && (
-          <div className="glass-panel p-8 rounded-[32px] border-white/5">
+          <div className="bg-[var(--glass-bg)] p-8 rounded-[32px] border border-[var(--glass-border)] backdrop-blur-3xl shadow-xl">
             <h3 className="text-[10px] font-black uppercase tracking-[0.3em] text-cyan-400 mb-6 flex items-center gap-2"><Activity className="w-4 h-4" /> Blood Parameters</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {analysis.parameters.map((p, i) => (
-                <div key={i} className="p-4 rounded-[20px] bg-white/[0.03] border border-white/5 hover:border-cyan-500/20 transition-all">
+                <div key={i} className="p-4 rounded-[20px] bg-[var(--input-bg)] border border-[var(--glass-border)] hover:border-cyan-500/20 transition-all group">
                   <div className="flex justify-between items-start mb-2">
-                    <p className="text-[10px] font-black text-white uppercase tracking-tight">{p.name}</p>
+                    <p className="text-[10px] font-black text-[var(--text-main)] uppercase tracking-tight">{p.name}</p>
                     <span className={cn('text-[8px] font-black px-2 py-0.5 rounded-full uppercase',
                       p.status === 'Normal' ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/20' :
                       p.status === 'Critical' ? 'bg-rose-500/20 text-rose-400 border border-rose-500/20' :
@@ -247,7 +248,7 @@ export default function BloodTestAnalysis({ report, token, onComplete }) {
                     )}>{p.status}</span>
                   </div>
                   <p className="text-sm font-black text-cyan-400 mb-1">{p.value}</p>
-                  {p.interpretation && <p className="text-[9px] text-white/30 leading-relaxed">{p.interpretation}</p>}
+                  {p.interpretation && <p className="text-[9px] text-[var(--text-muted)] leading-relaxed group-hover:text-[var(--text-main)] transition-colors">{p.interpretation}</p>}
                 </div>
               ))}
             </div>
@@ -256,7 +257,7 @@ export default function BloodTestAnalysis({ report, token, onComplete }) {
 
         {/* Threats */}
         {analysis.threats?.length > 0 && (
-          <div className="glass-panel p-8 rounded-[32px] border-white/5">
+          <div className="glass-panel p-8 rounded-[32px] border-[var(--border-subtle)]">
             <h3 className="text-[10px] font-black uppercase tracking-[0.3em] text-rose-400 mb-6 flex items-center gap-2"><AlertTriangle className="w-4 h-4" /> Pathological Alerts</h3>
             <div className="space-y-3">
               {analysis.threats.map((t, i) => (
@@ -270,7 +271,7 @@ export default function BloodTestAnalysis({ report, token, onComplete }) {
                     'text-amber-400': t.level === 'MODERATE',
                     'text-emerald-400': t.level === 'LOW',
                   })}>{t.level} — {t.condition}</p>
-                  <p className="text-[10px] text-white/50 leading-relaxed">{t.description}</p>
+                  <p className="text-[10px] text-[var(--text-muted)] leading-relaxed">{t.description}</p>
                 </div>
               ))}
             </div>
@@ -280,15 +281,15 @@ export default function BloodTestAnalysis({ report, token, onComplete }) {
         {/* Diet + Medications */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {analysis.diet?.length > 0 && (
-            <div className="glass-panel p-8 rounded-[32px] border-white/5">
+            <div className="glass-panel p-8 rounded-[32px] border-[var(--border-subtle)]">
               <h3 className="text-[10px] font-black uppercase tracking-[0.3em] text-emerald-400 mb-6 flex items-center gap-2"><Apple className="w-4 h-4" /> Nutritional Directives</h3>
               <div className="space-y-3">
                 {analysis.diet.slice(0, 5).map((d, i) => (
                   <div key={i} className="flex gap-3 p-3 rounded-[14px] bg-emerald-500/5 border border-emerald-500/10 hover:bg-emerald-500/10 transition-all">
                     <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0 mt-0.5" />
                     <div>
-                      <p className="text-[10px] font-black text-white uppercase leading-tight">{d.recommendation}</p>
-                      <p className="text-[9px] text-white/30 uppercase tracking-widest mt-0.5">{d.category}</p>
+                      <p className="text-[10px] font-black text-[var(--text-main)] uppercase leading-tight">{d.recommendation}</p>
+                      <p className="text-[9px] text-[var(--text-muted)] uppercase tracking-widest mt-0.5">{d.category}</p>
                     </div>
                   </div>
                 ))}
@@ -296,15 +297,15 @@ export default function BloodTestAnalysis({ report, token, onComplete }) {
             </div>
           )}
           {analysis.routine?.length > 0 && (
-            <div className="glass-panel p-8 rounded-[32px] border-white/5">
+            <div className="glass-panel p-8 rounded-[32px] border-[var(--border-subtle)]">
               <h3 className="text-[10px] font-black uppercase tracking-[0.3em] text-amber-400 mb-6 flex items-center gap-2"><Clock className="w-4 h-4" /> Daily Protocol</h3>
               <div className="space-y-3">
                 {analysis.routine.map((r, i) => (
                   <div key={i} className="flex gap-4 p-3 rounded-[14px] bg-amber-500/5 border border-amber-500/10">
                     <p className="text-[9px] font-black text-amber-400 uppercase w-16 shrink-0">{r.time}</p>
                     <div>
-                      <p className="text-[10px] font-black text-white uppercase">{r.activity}</p>
-                      {r.importance && <p className="text-[9px] text-white/30 mt-0.5">{r.importance}</p>}
+                      <p className="text-[10px] font-black text-[var(--text-main)] uppercase">{r.activity}</p>
+                      {r.importance && <p className="text-[9px] text-[var(--text-muted)] mt-0.5">{r.importance}</p>}
                     </div>
                   </div>
                 ))}
@@ -314,9 +315,9 @@ export default function BloodTestAnalysis({ report, token, onComplete }) {
         </div>
 
         {/* Disclaimer */}
-        <div className="p-6 rounded-[24px] border border-white/5 flex items-center gap-4 opacity-40">
+        <div className="p-6 rounded-[24px] border border-[var(--border-subtle)] flex items-center gap-4 opacity-40">
           <ShieldCheck className="w-6 h-6 text-cyan-500 shrink-0" />
-          <p className="text-[9px] font-bold uppercase tracking-wider text-white/60 leading-relaxed">
+          <p className="text-[9px] font-bold uppercase tracking-wider text-[var(--text-muted)] leading-relaxed">
             CBC analysis generated by Tesseract OCR + Neural Llama-4 Scout. Not a substitute for licensed physician opinion.
           </p>
         </div>

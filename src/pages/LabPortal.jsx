@@ -8,6 +8,7 @@ import {
 import { Button } from '../components/Button';
 import { cn } from '../components/Button';
 import { useAuth } from '../context/AuthContext';
+import { useTheme } from '../context/ThemeContext';
 import { BarChart, Bar, LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts';
 
 const fadeInUp = {
@@ -26,6 +27,7 @@ const TEST_TYPES = [
 
 export default function LabPortal() {
   const { user, token } = useAuth();
+  const { theme } = useTheme();
   const [patients, setPatients] = useState([]);        // lab appointments from backend
   const [labAppointments, setLabAppointments] = useState([]);
   const [aptsLoading, setAptsLoading] = useState(true);
@@ -243,6 +245,12 @@ export default function LabPortal() {
   };
   const charts = generateChartData();
 
+  // Dynamic Chart Colors
+  const chartTextColor = 'var(--text-muted)';
+  const chartGridColor = 'var(--border-subtle)';
+  const tooltipBg = 'var(--glass-bg)';
+  const tooltipBorder = 'var(--glass-border)';
+
   return (
     <div className="flex-grow flex flex-col px-6 py-12 text-[var(--text-main)] max-w-7xl mx-auto w-full relative z-10 bg-mesh min-h-screen">
       <div className="fixed inset-0 bg-transparent -z-10" />
@@ -256,9 +264,9 @@ export default function LabPortal() {
             <div className="w-10 h-10 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center">
               <FlaskConical className="w-5 h-5 text-emerald-500" />
             </div>
-            <h1 className="text-4xl font-black uppercase tracking-tighter text-white">Lab Portal</h1>
+            <h1 className="text-4xl font-black uppercase tracking-tighter text-[var(--text-main)]">Lab Portal</h1>
           </div>
-          <p className="text-[11px] font-black uppercase tracking-[0.3em] text-white/30">
+          <p className="text-[11px] font-black uppercase tracking-[0.3em] text-[var(--text-muted)] opacity-60">
             {user?.name} · Clinical Diagnostics Terminal
           </p>
         </div>
@@ -267,61 +275,61 @@ export default function LabPortal() {
       {/* Stats */}
       <motion.div variants={fadeInUp} initial="initial" animate="animate" transition={{ delay: 0.05 }} className="grid grid-cols-2 md:grid-cols-4 gap-5 mb-10">
         {[
-          { label: 'Appointments', value: activePatients.length, color: 'text-cyan-400', bg: 'bg-cyan-500/5 border-cyan-500/10' },
-          { label: 'Reports Uploaded', value: uploadedReports.length, color: 'text-emerald-400', bg: 'bg-emerald-500/5 border-emerald-500/10' },
-          { label: 'Viewed by Patient', value: uploadedReports.filter(r => r.status !== 'pending').length, color: 'text-violet-400', bg: 'bg-violet-500/5 border-violet-500/10' },
-          { label: 'Pending Lab Upload', value: pendingCount, color: 'text-amber-400', bg: 'bg-amber-500/5 border-amber-500/10' },
+          { label: 'Appointments', value: activePatients.length, color: 'text-cyan-400', bg: 'bg-[var(--input-bg)] border-[var(--glass-border)]' },
+          { label: 'Reports Uploaded', value: uploadedReports.length, color: 'text-emerald-400', bg: 'bg-[var(--input-bg)] border-[var(--glass-border)]' },
+          { label: 'Viewed by Patient', value: uploadedReports.filter(r => r.status !== 'pending').length, color: 'text-violet-400', bg: 'bg-[var(--input-bg)] border-[var(--glass-border)]' },
+          { label: 'Pending Lab Upload', value: pendingCount, color: 'text-amber-400', bg: 'bg-[var(--input-bg)] border-[var(--glass-border)]' },
         ].map((stat, i) => (
           <div key={i} className={cn("glass-panel p-6 rounded-[28px] border flex flex-col items-center text-center", stat.bg)}>
-            <p className="text-[9px] font-black uppercase tracking-[0.2em] text-white/30 mb-2">{stat.label}</p>
+            <p className="text-[9px] font-black uppercase tracking-[0.2em] text-[var(--text-muted)] mb-2">{stat.label}</p>
             <p className={cn("text-4xl font-black", stat.color)}>{stat.value}</p>
           </div>
         ))}
       </motion.div>
 
       {/* ── DATA SCIENCE GRAPHS ── */}
-      <motion.div variants={fadeInUp} initial="initial" animate="animate" className="glass-panel p-10 rounded-[40px] border-white/5 mb-10">
+      <motion.div variants={fadeInUp} initial="initial" animate="animate" className="glass-panel p-10 rounded-[40px] border-[var(--glass-border)] mb-10 shadow-lg">
         <div className="flex flex-col md:flex-row md:items-center justify-between mb-8 gap-4">
           <h2 className="text-[10px] font-black uppercase tracking-[0.3em] text-violet-400 flex items-center gap-3">
             <Activity className="w-4 h-4" /> Data Science: Appointment Trends
           </h2>
-          <div className="flex bg-[#030712] p-1.5 rounded-2xl border border-white/5 w-fit">
+          <div className="flex bg-[var(--input-bg)] p-1.5 rounded-2xl border border-[var(--glass-border)] w-fit">
             {['daily', 'hourly', 'monthly'].map(m => (
               <button key={m} onClick={() => setChartMode(m)}
                 className={cn("px-6 py-2.5 rounded-[12px] text-[10px] font-black uppercase tracking-widest transition-all", 
-                chartMode === m ? 'bg-violet-500/10 text-violet-400 shadow-lg border border-violet-500/20' : 'text-white/40 hover:text-white')}
+                chartMode === m ? 'bg-violet-500/10 text-violet-500 shadow-lg border border-violet-500/20' : 'text-[var(--text-muted)] hover:text-[var(--text-main)]')}
               >{m}</button>
             ))}
           </div>
         </div>
         
         {labAppointments.length === 0 ? (
-          <div className="py-12 text-center text-white/20 text-[10px] font-black uppercase tracking-widest">
+          <div className="py-12 text-center text-[var(--text-muted)] text-[10px] font-black uppercase tracking-widest opacity-40">
             No booking data available
           </div>
         ) : (
-          <div className="bg-[#030712]/50 p-8 rounded-3xl border border-white/5">
+          <div className="bg-[var(--input-bg)] p-8 rounded-3xl border border-[var(--input-border)]">
             <div className="h-[300px]">
               <ResponsiveContainer width="100%" height="100%">
                 {chartMode === 'daily' ? (
                   <BarChart data={charts.daily}>
-                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(255,255,255,0.05)" />
-                    <XAxis dataKey="name" tick={{ fill: 'rgba(255,255,255,0.4)', fontSize: 9 }} axisLine={false} tickLine={false} />
-                    <Tooltip contentStyle={{ backgroundColor: '#0f172a', border: 'none', borderRadius: '12px' }} />
+                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={chartGridColor} />
+                    <XAxis dataKey="name" tick={{ fill: chartTextColor, fontSize: 9 }} axisLine={false} tickLine={false} />
+                    <Tooltip contentStyle={{ backgroundColor: tooltipBg, border: `1px solid ${tooltipBorder}`, borderRadius: '12px' }} />
                     <Bar dataKey="count" fill="#06b6d4" radius={[4,4,0,0]} />
                   </BarChart>
                 ) : chartMode === 'hourly' ? (
                   <LineChart data={charts.hourly}>
-                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(255,255,255,0.05)" />
-                    <XAxis dataKey="name" tick={{ fill: 'rgba(255,255,255,0.4)', fontSize: 9 }} axisLine={false} tickLine={false} />
-                    <Tooltip contentStyle={{ backgroundColor: '#0f172a', border: 'none', borderRadius: '12px' }} />
+                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={chartGridColor} />
+                    <XAxis dataKey="name" tick={{ fill: chartTextColor, fontSize: 9 }} axisLine={false} tickLine={false} />
+                    <Tooltip contentStyle={{ backgroundColor: tooltipBg, border: `1px solid ${tooltipBorder}`, borderRadius: '12px' }} />
                     <Line type="monotone" dataKey="count" stroke="#10b981" strokeWidth={3} dot={{ fill: '#10b981', r: 4 }} activeDot={{ r: 6 }} />
                   </LineChart>
                 ) : (
                   <BarChart data={charts.monthly}>
-                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(255,255,255,0.05)" />
-                    <XAxis dataKey="name" tick={{ fill: 'rgba(255,255,255,0.4)', fontSize: 9 }} axisLine={false} tickLine={false} />
-                    <Tooltip contentStyle={{ backgroundColor: '#0f172a', border: 'none', borderRadius: '12px' }} />
+                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={chartGridColor} />
+                    <XAxis dataKey="name" tick={{ fill: chartTextColor, fontSize: 9 }} axisLine={false} tickLine={false} />
+                    <Tooltip contentStyle={{ backgroundColor: tooltipBg, border: `1px solid ${tooltipBorder}`, borderRadius: '12px' }} />
                     <Bar dataKey="count" fill="#8b5cf6" radius={[4,4,0,0]} />
                   </BarChart>
                 )}
@@ -335,32 +343,32 @@ export default function LabPortal() {
 
       {/* Legacy Appointment Table */}
       {patients.length > 0 && (
-        <motion.div variants={fadeInUp} initial="initial" animate="animate" transition={{ delay: 0.15 }} className="glass-panel p-10 rounded-[40px] border-white/5">
-          <h2 className="text-[10px] font-black uppercase tracking-[0.3em] text-white/40 mb-8 flex items-center gap-3">
+        <motion.div variants={fadeInUp} initial="initial" animate="animate" transition={{ delay: 0.15 }} className="glass-panel p-10 rounded-[40px] border-[var(--glass-border)] shadow-lg">
+          <h2 className="text-[10px] font-black uppercase tracking-[0.3em] text-[var(--text-muted)] mb-8 flex items-center gap-3">
             <Activity className="w-4 h-4 text-cyan-500" /> Booked Appointments
           </h2>
 
           <div className="flex flex-col md:flex-row gap-4 mb-8">
-            <div className="flex bg-[#030712] p-1.5 rounded-2xl border border-white/5">
+            <div className="flex bg-[var(--input-bg)] p-1.5 rounded-2xl border border-[var(--glass-border)]">
               {['all', 'pending', 'uploaded', 'cancelled'].map(f => (
                 <button key={f}
-                  className={cn("px-5 py-2.5 rounded-[12px] text-[10px] font-black uppercase tracking-widest flex-1", filter === f ? 'bg-cyan-500/10 text-cyan-400' : 'text-white/40 hover:text-white transition-colors')}
+                  className={cn("px-5 py-2.5 rounded-[12px] text-[10px] font-black uppercase tracking-widest flex-1", filter === f ? 'bg-cyan-500/10 text-cyan-400' : 'text-[var(--text-muted)] hover:text-[var(--text-main)] transition-colors')}
                   onClick={() => setFilter(f)}
                 >{f}</button>
               ))}
             </div>
             <div className="relative flex-grow max-w-xs">
-              <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-white/20" />
+              <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--text-muted)] opacity-50" />
               <input type="text" placeholder="Search patient / ID..." value={search}
                 onChange={e => setSearch(e.target.value)}
-                className="w-full bg-[#030712] border border-white/5 rounded-2xl py-3 pl-10 pr-4 text-xs font-medium uppercase tracking-wider outline-none focus:border-cyan-500/30 transition-colors" />
+                className="w-full bg-[var(--input-bg)] border border-[var(--glass-border)] rounded-2xl py-3 pl-10 pr-4 text-xs font-medium uppercase tracking-wider outline-none focus:border-cyan-500/50 transition-all text-[var(--text-main)] placeholder:text-[var(--text-muted)] placeholder:opacity-30 shadow-sm" />
             </div>
           </div>
 
           <div className="overflow-x-auto">
             <table className="w-full text-left">
               <thead>
-                <tr className="border-b border-white/5 text-white/30 text-[9px] font-black uppercase tracking-[0.15em]">
+                <tr className="border-b border-[var(--glass-border)] text-[var(--text-muted)] text-[9px] font-black uppercase tracking-[0.15em] opacity-60">
                   <th className="pb-4 px-4">Patient</th>
                   <th className="pb-4 px-4">Booking ID</th>
                   <th className="pb-4 px-4">Test</th>
@@ -368,20 +376,20 @@ export default function LabPortal() {
                   <th className="pb-4 px-4 text-right">Action</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-white/5">
+              <tbody className="divide-y divide-[var(--border-subtle)]">
                 {filtered.length === 0 ? (
-                  <tr><td colSpan="5" className="py-12 text-center text-white/20 text-[10px] font-black uppercase tracking-widest">No records found</td></tr>
+                  <tr><td colSpan="5" className="py-12 text-center text-[var(--text-muted)] opacity-20 text-[10px] font-black uppercase tracking-widest">No records found</td></tr>
                 ) : filtered.map(p => (
-                  <tr key={p._id} className="hover:bg-white/[0.01] transition-colors">
+                  <tr key={p._id} className="hover:bg-[var(--accent-primary)]/5 transition-colors">
                     <td className="py-5 px-4">
-                      <div className="font-bold text-sm text-white">{p.patientName}</div>
+                      <div className="font-bold text-sm text-[var(--text-main)]">{p.patientName}</div>
                     </td>
                     <td className="py-5 px-4">
-                      <span className="bg-white/5 px-3 py-1.5 rounded-lg text-[11px] font-mono font-bold text-cyan-400">{p.bid}</span>
+                      <span className="bg-[var(--input-bg)] px-3 py-1.5 rounded-lg text-[11px] font-mono font-bold text-cyan-400">{p.bid}</span>
                     </td>
                     <td className="py-5 px-4">
-                      <div className="text-sm font-bold text-white mb-0.5">{p.test}</div>
-                      <div className="text-[10px] text-white/30 uppercase">{p.date} · {p.slot}</div>
+                      <div className="text-sm font-bold text-[var(--text-main)] mb-0.5">{p.test}</div>
+                      <div className="text-[10px] text-[var(--text-muted)] uppercase opacity-60">{p.date} · {p.slot}</div>
                     </td>
                     <td className="py-5 px-4">
                       {p.status === 'cancelled' ? (
@@ -396,7 +404,7 @@ export default function LabPortal() {
                       {p.status === 'cancelled' ? (
                         <span className="text-rose-500/40 text-[10px] font-black uppercase tracking-widest flex items-center justify-end gap-2"><ShieldAlert className="w-3 h-3" /> Cancelled</span>
                       ) : p.status === 'uploaded' ? (
-                        <span className="text-[9px] text-white/20 font-black uppercase tracking-widest">{p.city}</span>
+                        <span className="text-[9px] text-[var(--text-muted)] opacity-20 font-black uppercase tracking-widest">{p.city}</span>
                       ) : (
                         <button
                           onClick={() => openUploadForAppointment(p)}
@@ -432,17 +440,17 @@ export default function LabPortal() {
                 className="w-full max-w-lg glass-panel rounded-[36px] border border-white/10 shadow-[0_0_100px_-20px_rgba(0,0,0,1)] overflow-hidden"
               >
                 {/* Modal Header */}
-                <div className="px-8 pt-8 pb-5 border-b border-white/5 flex items-center justify-between sticky top-0 bg-[#0a0f1e] z-10">
+                <div className="px-8 pt-8 pb-5 border-b border-[var(--glass-border)] flex items-center justify-between sticky top-0 bg-[var(--bg-main)] z-10">
                   <div className="flex items-center gap-3">
                     <div className="w-10 h-10 rounded-[14px] bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center">
                       <UploadCloud className="w-5 h-5 text-emerald-500" />
                     </div>
                     <div>
-                      <h2 className="text-base font-black uppercase tracking-tighter text-white">Upload Lab Report</h2>
-                      <p className="text-[8px] font-black uppercase tracking-[0.3em] text-white/30">Send directly to patient</p>
+                      <h2 className="text-base font-black uppercase tracking-tighter text-[var(--text-main)]">Upload Lab Report</h2>
+                      <p className="text-[8px] font-black uppercase tracking-[0.3em] text-[var(--text-muted)] opacity-60">Send directly to patient</p>
                     </div>
                   </div>
-                  <button onClick={resetUploadModal} className="w-9 h-9 rounded-xl bg-white/5 hover:bg-white/10 flex items-center justify-center text-white/40 hover:text-white transition-all">
+                  <button onClick={resetUploadModal} className="w-9 h-9 rounded-xl bg-[var(--input-bg)] hover:bg-[var(--glass-hover)] flex items-center justify-center text-[var(--text-muted)] hover:text-[var(--text-main)] transition-all border border-[var(--glass-border)] shadow-sm">
                     <X className="w-4 h-4" />
                   </button>
                 </div>
@@ -464,22 +472,22 @@ export default function LabPortal() {
                       <div className="flex items-center gap-3 p-3 rounded-2xl bg-emerald-500/5 border border-emerald-500/20">
                         <User className="w-4 h-4 text-emerald-400 shrink-0" />
                         <div>
-                          <p className="text-[8px] font-black uppercase tracking-widest text-white/30">Patient</p>
-                          <p className="text-sm font-black text-white">{form.patientName}</p>
+                          <p className="text-[8px] font-black uppercase tracking-widest text-[var(--text-muted)] opacity-60">Patient</p>
+                          <p className="text-sm font-black text-[var(--text-main)]">{form.patientName}</p>
                         </div>
                       </div>
                     ) : (
                       <div>
-                        <label className="text-[9px] font-black uppercase tracking-[0.3em] text-white/40 mb-2 block">Patient Name *</label>
+                        <label className="text-[9px] font-black uppercase tracking-[0.3em] text-[var(--text-muted)] mb-2 block">Patient Name *</label>
                         <div className="relative">
-                          <User className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-white/20" />
+                          <User className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--text-muted)] opacity-50" />
                           <input
                             type="text"
                             required
                             value={form.patientName}
                             onChange={e => setForm(p => ({ ...p, patientName: e.target.value }))}
                             placeholder="Patient full name"
-                            className="w-full bg-white/5 border border-white/10 rounded-2xl py-3 pl-12 pr-4 text-sm font-medium text-white outline-none focus:border-emerald-500/50 transition-all placeholder:text-white/20"
+                            className="w-full bg-[var(--input-bg)] border border-[var(--glass-border)] rounded-2xl py-3 pl-12 pr-4 text-sm font-medium text-[var(--text-main)] outline-none focus:border-emerald-500/50 transition-all placeholder:text-[var(--text-muted)] placeholder:opacity-30 shadow-sm"
                           />
                         </div>
                       </div>
@@ -487,43 +495,43 @@ export default function LabPortal() {
 
                     {/* Test Type */}
                     <div>
-                      <label className="text-[9px] font-black uppercase tracking-[0.3em] text-white/40 mb-2 block">Test Type *</label>
+                      <label className="text-[9px] font-black uppercase tracking-[0.3em] text-[var(--text-muted)] mb-2 block">Test Type *</label>
                       <select
                         value={form.testType}
                         onChange={e => setForm(p => ({ ...p, testType: e.target.value }))}
-                        className="w-full bg-white/5 border border-white/10 rounded-2xl py-3 px-4 text-sm font-medium text-white outline-none focus:border-emerald-500/50 transition-all appearance-none"
+                        className="w-full bg-[var(--input-bg)] border border-[var(--glass-border)] rounded-2xl py-3 px-4 text-sm font-medium text-[var(--text-main)] outline-none focus:border-emerald-500/50 transition-all appearance-none shadow-sm"
                       >
-                        {TEST_TYPES.map(t => <option key={t} value={t} className="bg-[#020617]">{t}</option>)}
+                        {TEST_TYPES.map(t => <option key={t} value={t} className="bg-[var(--bg-main)] text-[var(--text-main)]">{t}</option>)}
                       </select>
                     </div>
                     {/* Report Title */}
                     <div>
-                      <label className="text-[9px] font-black uppercase tracking-[0.3em] text-white/40 mb-2 block">Report Title *</label>
+                      <label className="text-[9px] font-black uppercase tracking-[0.3em] text-[var(--text-muted)] mb-2 block">Report Title *</label>
                       <input
                         type="text"
                         required
                         value={form.reportTitle}
                         onChange={e => setForm(p => ({ ...p, reportTitle: e.target.value }))}
                         placeholder="e.g. CBC Report – April 2026"
-                        className="w-full bg-white/5 border border-white/10 rounded-2xl py-3 px-4 text-sm font-medium text-white outline-none focus:border-emerald-500/50 transition-all placeholder:text-white/20"
+                        className="w-full bg-[var(--input-bg)] border border-[var(--glass-border)] rounded-2xl py-3 px-4 text-sm font-medium text-[var(--text-main)] outline-none focus:border-emerald-500/50 transition-all placeholder:text-[var(--text-muted)] placeholder:opacity-30 shadow-sm"
                       />
                     </div>
 
                     {/* Notes */}
                     <div>
-                      <label className="text-[9px] font-black uppercase tracking-[0.3em] text-white/40 mb-2 block">Technician Notes (optional)</label>
+                      <label className="text-[9px] font-black uppercase tracking-[0.3em] text-[var(--text-muted)] mb-2 block">Technician Notes (optional)</label>
                       <textarea
                         value={form.notes}
                         onChange={e => setForm(p => ({ ...p, notes: e.target.value }))}
                         placeholder="Any notes for the patient or AI..."
                         rows={2}
-                        className="w-full bg-white/5 border border-white/10 rounded-2xl py-3 px-4 text-sm font-medium text-white outline-none focus:border-emerald-500/50 transition-all placeholder:text-white/20 resize-none"
+                        className="w-full bg-[var(--input-bg)] border border-[var(--glass-border)] rounded-2xl py-3 px-4 text-sm font-medium text-[var(--text-main)] outline-none focus:border-emerald-500/50 transition-all placeholder:text-[var(--text-muted)] placeholder:opacity-30 shadow-sm resize-none"
                       />
                     </div>
 
                     {/* File Upload */}
                     <div>
-                      <label className="text-[9px] font-black uppercase tracking-[0.3em] text-white/40 mb-2 block">
+                      <label className="text-[9px] font-black uppercase tracking-[0.3em] text-[var(--text-muted)] mb-2 block">
                         Report File * (PDF or Image)
                       </label>
                       <label className="relative block cursor-pointer group">
@@ -535,7 +543,7 @@ export default function LabPortal() {
                           onChange={handleFileSelect}
                         />
                         <div className={cn("py-5 rounded-2xl border-2 border-dashed text-center transition-all",
-                          file ? "border-emerald-500/40 bg-emerald-500/5" : "border-white/10 hover:border-white/20 bg-white/[0.02]"
+                          file ? "border-emerald-500/40 bg-emerald-500/5" : "border-[var(--border-subtle)] hover:border-cyan-500/30 bg-[var(--input-bg)]"
                         )}>
                           {file ? (
                             <div className="flex items-center justify-center gap-3">
@@ -545,8 +553,8 @@ export default function LabPortal() {
                             </div>
                           ) : (
                             <div className="flex items-center justify-center gap-3 opacity-40">
-                              <UploadCloud className="w-5 h-5 text-white" />
-                              <span className="text-[10px] font-black text-white uppercase tracking-widest">Click to select file</span>
+                              <UploadCloud className="w-5 h-5 text-[var(--text-muted)]" />
+                              <span className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-widest">Click to select file</span>
                             </div>
                           )}
                         </div>

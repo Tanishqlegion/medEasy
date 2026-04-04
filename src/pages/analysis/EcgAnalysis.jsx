@@ -18,6 +18,9 @@ const buildGroqPrompt = (modelOutput) => `You are an expert cardiologist AI.
 A PyTorch ECG vision model (MaxViT) analyzed the ECG and produced this output:
 ${JSON.stringify(modelOutput, null, 2)}
 
+The model classification "${modelOutput.prediction}" with confidence ${(modelOutput.confidence * 100).toFixed(1)}% is GROUND TRUTH. Build a clinical report CONSISTENT with this classification.
+CRITICAL RULE: If the confidence is < 60.0%, you MUST state "Please consider consulting a doctor immediately due to low AI certainty" in the summary, and set the overall_verdict to "CONSULT DOCTOR".
+
 Based on this ML classification, provide a comprehensive clinical ECG analysis as strict JSON (no markdown):
 {
   "summary": "2-sentence clinical interpretation",
@@ -37,7 +40,7 @@ Based on this ML classification, provide a comprehensive clinical ECG analysis a
   "diet": [{"recommendation":"string","category":"string","reason":"string"}],
   "medications": [{"name":"string","dosage":"string","frequency":"string","purpose":"string"}],
   "routine": [{"time":"string","activity":"string","importance":"string"}],
-  "overall_verdict": "STABLE|MONITORING|URGENT|CRITICAL",
+  "overall_verdict": "STABLE|MONITORING|URGENT|CRITICAL|CONSULT DOCTOR",
   "clinical_notes": "Detailed interpretation of the ECG findings"
 }`;
 
@@ -128,10 +131,15 @@ export default function EcgAnalysis({ report, token, onComplete }) {
       const formData = new FormData();
       formData.append('image', fileObj);
 
-      const flaskRes = await fetch(`${FLASK_URL}/analyze-ecg`, { method: 'POST', body: formData });
-      if (!flaskRes.ok) throw new Error(`Flask model error: ${flaskRes.status}`);
-      const flaskData = await flaskRes.json();
-      if (flaskData.error) throw new Error(flaskData.error);
+      let flaskData;
+      try {
+        const flaskRes = await fetch(`${FLASK_URL}/analyze-ecg-signal`, { method: 'POST', body: formData });
+        if (!flaskRes.ok) throw new Error(`ECG Signal Processing Engine Error: ${flaskRes.status}`);
+        flaskData = await flaskRes.json();
+        if (flaskData.error) throw new Error(flaskData.error);
+      } catch (err) {
+        throw err;
+      }
       setModelOutput(flaskData);
 
       // Step 2: Groq for detailed clinical narrative
@@ -179,12 +187,12 @@ export default function EcgAnalysis({ report, token, onComplete }) {
         <HeartPulse className="w-8 h-8 text-rose-500 absolute inset-0 m-auto animate-pulse" />
       </div>
       <div className="text-center">
-        <p className="text-lg font-black uppercase tracking-tighter text-white mb-2">ECG Neural Analysis</p>
+        <p className="text-lg font-black uppercase tracking-tighter text-[var(--text-main)] mb-2">ECG Neural Analysis</p>
         <p className="text-[10px] font-black uppercase tracking-[0.3em] text-rose-400 animate-pulse">{step}</p>
         {modelOutput && (
           <div className="mt-4 px-6 py-3 rounded-2xl bg-rose-500/10 border border-rose-500/20">
             <p className="text-[10px] font-black text-rose-400 uppercase tracking-widest">Model Output: {modelOutput.prediction}</p>
-            <p className="text-[9px] text-white/40 uppercase mt-1">Confidence: {(modelOutput.confidence * 100).toFixed(1)}%</p>
+            <p className="text-[9px] text-[var(--text-muted)] uppercase mt-1">Confidence: {(modelOutput.confidence * 100).toFixed(1)}%</p>
           </div>
         )}
       </div>
@@ -208,7 +216,8 @@ export default function EcgAnalysis({ report, token, onComplete }) {
     <AnimatePresence>
       <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="space-y-6">
         {/* Hero */}
-        <div className="p-8 rounded-[32px] bg-rose-500/5 border border-rose-500/20 flex items-center gap-6">
+        <div className="p-8 rounded-[32px] bg-[var(--glass-bg)] border border-[var(--glass-border)] flex items-center gap-6 backdrop-blur-3xl shadow-xl relative overflow-hidden">
+          <div className="absolute inset-0 bg-rose-500/5 -z-10" />
           <div className={cn('w-16 h-16 rounded-[20px] flex items-center justify-center font-black text-2xl text-white shadow-xl shrink-0',
             analysis.overall_verdict === 'STABLE' ? 'bg-gradient-to-br from-emerald-500 to-teal-600 shadow-emerald-500/30' :
             analysis.overall_verdict === 'CRITICAL' ? 'bg-gradient-to-br from-rose-500 to-red-700 shadow-rose-500/30' :
@@ -227,18 +236,19 @@ export default function EcgAnalysis({ report, token, onComplete }) {
                 </span>
               )}
             </div>
-            <p className="text-sm font-bold text-white leading-snug">{analysis.summary}</p>
+            <p className="text-sm font-bold text-[var(--text-main)] leading-snug">{analysis.summary}</p>
           </div>
         </div>
 
         {/* ECG Waveform Visualization */}
-        <div className="glass-panel p-6 rounded-[28px] border-rose-500/10">
+        <div className="bg-[var(--glass-bg)] p-6 rounded-[28px] border border-[var(--glass-border)] backdrop-blur-3xl shadow-lg relative overflow-hidden">
+          <div className="absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-transparent via-rose-500/20 to-transparent" />
           <h3 className="text-[10px] font-black uppercase tracking-[0.3em] text-rose-400 mb-4 flex items-center gap-2"><Activity className="w-4 h-4" /> ECG Waveform Trace</h3>
           <div className="h-[120px]">
             <ResponsiveContainer>
               <LineChart data={ecgWaveData}>
                 <Line type="monotone" dataKey="v" stroke="#f43f5e" strokeWidth={2} dot={false} animationDuration={1500} />
-                <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.03)" />
+                <CartesianGrid strokeDasharray="3 3" stroke="var(--glass-border)" />
               </LineChart>
             </ResponsiveContainer>
           </div>
@@ -247,32 +257,32 @@ export default function EcgAnalysis({ report, token, onComplete }) {
         {/* Model output + Risk Chart */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {modelOutput && (
-            <div className="glass-panel p-6 rounded-[28px] border-white/5 space-y-4">
+            <div className="bg-[var(--glass-bg)] p-6 rounded-[28px] border border-[var(--glass-border)] backdrop-blur-3xl shadow-lg space-y-4">
               <h3 className="text-[10px] font-black uppercase tracking-[0.3em] text-rose-400 flex items-center gap-2"><HeartPulse className="w-4 h-4" /> Model Classification</h3>
-              <div className="p-4 rounded-[16px] bg-rose-500/5 border border-rose-500/10">
-                <p className="text-[9px] font-black uppercase tracking-widest text-white/30 mb-1">Predicted Class</p>
+              <div className="p-4 rounded-[16px] bg-[var(--input-bg)] border border-[var(--glass-border)]">
+                <p className="text-[9px] font-black uppercase tracking-widest text-[var(--text-muted)] mb-1">Predicted Class</p>
                 <p className="text-sm font-black text-rose-400 uppercase">{modelOutput.prediction}</p>
               </div>
               <div className="grid grid-cols-2 gap-3">
-                <div className="p-3 rounded-[12px] bg-white/[0.03] border border-white/5 text-center">
-                  <p className="text-[8px] font-black text-white/30 uppercase tracking-widest mb-1">Risk</p>
-                  <p className="text-xs font-black text-white uppercase">{modelOutput.risk_level}</p>
+                <div className="p-3 rounded-[12px] bg-[var(--bg-main)]/50 border border-[var(--glass-border)] text-center">
+                  <p className="text-[8px] font-black text-[var(--text-muted)] uppercase tracking-widest mb-1">Risk</p>
+                  <p className="text-xs font-black text-[var(--text-main)] uppercase">{modelOutput.risk_level}</p>
                 </div>
-                <div className="p-3 rounded-[12px] bg-white/[0.03] border border-white/5 text-center">
-                  <p className="text-[8px] font-black text-white/30 uppercase tracking-widest mb-1">Confidence</p>
+                <div className="p-3 rounded-[12px] bg-[var(--bg-main)]/50 border border-[var(--glass-border)] text-center">
+                  <p className="text-[8px] font-black text-[var(--text-muted)] uppercase tracking-widest mb-1">Confidence</p>
                   <p className="text-xs font-black text-cyan-400">{(modelOutput.confidence * 100).toFixed(1)}%</p>
                 </div>
               </div>
-              <p className="text-[9px] text-white/40 leading-relaxed">{modelOutput.reasoning}</p>
+              <p className="text-[9px] text-[var(--text-muted)] leading-relaxed">{modelOutput.reasoning}</p>
             </div>
           )}
-          <div className="glass-panel p-6 rounded-[28px] border-white/5">
+          <div className="bg-[var(--glass-bg)] p-6 rounded-[28px] border border-[var(--glass-border)] backdrop-blur-3xl shadow-lg">
             <h3 className="text-[10px] font-black uppercase tracking-[0.3em] text-rose-400 mb-4 flex items-center gap-2"><Shield className="w-4 h-4" /> Cardiac Risk Profile</h3>
             <div className="h-[180px]">
               <ResponsiveContainer>
                 <RadarChart data={riskData}>
-                  <PolarGrid stroke="rgba(255,255,255,0.05)" />
-                  <PolarAngleAxis dataKey="name" tick={{ fill: 'rgba(255,255,255,0.4)', fontSize: 9, fontWeight: 900 }} />
+                  <PolarGrid stroke="var(--glass-border)" />
+                  <PolarAngleAxis dataKey="name" tick={{ fill: 'var(--text-muted)', fontSize: 9, fontWeight: 900 }} />
                   <Radar dataKey="value" stroke="#f43f5e" fill="#f43f5e" fillOpacity={0.2} />
                 </RadarChart>
               </ResponsiveContainer>
@@ -282,15 +292,15 @@ export default function EcgAnalysis({ report, token, onComplete }) {
 
         {/* Parameters */}
         {analysis.parameters?.length > 0 && (
-          <div className="glass-panel p-8 rounded-[32px] border-white/5">
-            <h3 className="text-[10px] font-black uppercase tracking-[0.3em] text-rose-400 mb-6">ECG Parameters</h3>
+          <div className="bg-[var(--glass-bg)] p-8 rounded-[32px] border border-[var(--glass-border)] backdrop-blur-3xl shadow-xl">
+            <h3 className="text-[10px] font-black uppercase tracking-[0.3em] text-rose-400 mb-6 font-black uppercase">ECG Parameters</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
               {analysis.parameters.map((p, i) => (
-                <div key={i} className="p-4 rounded-[16px] bg-white/[0.03] border border-white/5 flex justify-between items-center">
+                <div key={i} className="p-4 rounded-[16px] bg-[var(--input-bg)] border border-[var(--glass-border)] flex justify-between items-center group hover:bg-[var(--bg-main)]/50 transition-all">
                   <div>
-                    <p className="text-[10px] font-black text-white uppercase">{p.name}</p>
+                    <p className="text-[10px] font-black text-[var(--text-main)] uppercase">{p.name}</p>
                     <p className="text-xs font-black text-rose-400">{p.value}</p>
-                    {p.interpretation && <p className="text-[9px] text-white/30 mt-0.5">{p.interpretation}</p>}
+                    {p.interpretation && <p className="text-[9px] text-[var(--text-muted)] mt-0.5 group-hover:text-[var(--text-main)] transition-colors">{p.interpretation}</p>}
                   </div>
                   <span className={cn('text-[8px] font-black px-2 py-0.5 rounded-full uppercase shrink-0 ml-3',
                     p.status === 'Normal' ? 'bg-emerald-500/20 text-emerald-400' :
@@ -305,37 +315,37 @@ export default function EcgAnalysis({ report, token, onComplete }) {
 
         {/* Clinical Notes */}
         {analysis.clinical_notes && (
-          <div className="glass-panel p-8 rounded-[32px] border-rose-500/10 bg-rose-500/[0.02]">
+          <div className="glass-panel p-8 rounded-[32px] border-[var(--border-subtle)] bg-[var(--bg-main)]/10">
             <h3 className="text-[10px] font-black uppercase tracking-[0.3em] text-rose-400 mb-4">Clinical Interpretation</h3>
-            <p className="text-sm text-white/60 leading-relaxed">{analysis.clinical_notes}</p>
+            <p className="text-sm text-[var(--text-muted)] leading-relaxed">{analysis.clinical_notes}</p>
           </div>
         )}
 
         {/* Threats + Diet */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {analysis.threats?.length > 0 && (
-            <div className="glass-panel p-6 rounded-[28px] border-white/5">
+            <div className="glass-panel p-6 rounded-[28px] border-[var(--border-subtle)]">
               <h3 className="text-[10px] font-black uppercase tracking-[0.3em] text-rose-400 mb-4 flex items-center gap-2"><AlertTriangle className="w-4 h-4" /> Alerts</h3>
               <div className="space-y-3">
                 {analysis.threats.map((t, i) => (
                   <div key={i} className="p-3 rounded-[14px] bg-rose-500/5 border border-rose-500/10">
                     <p className="text-[9px] font-black text-rose-400 uppercase mb-1">{t.level} — {t.condition}</p>
-                    <p className="text-[10px] text-white/40">{t.description}</p>
+                    <p className="text-[10px] text-[var(--text-muted)]">{t.description}</p>
                   </div>
                 ))}
               </div>
             </div>
           )}
           {analysis.diet?.length > 0 && (
-            <div className="glass-panel p-6 rounded-[28px] border-white/5">
+            <div className="glass-panel p-6 rounded-[28px] border-[var(--border-subtle)]">
               <h3 className="text-[10px] font-black uppercase tracking-[0.3em] text-emerald-400 mb-4 flex items-center gap-2"><Apple className="w-4 h-4" /> Cardiac Diet</h3>
               <div className="space-y-3">
                 {analysis.diet.slice(0, 4).map((d, i) => (
                   <div key={i} className="flex gap-3 p-3 rounded-[14px] bg-emerald-500/5 border border-emerald-500/10">
                     <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0 mt-0.5" />
                     <div>
-                      <p className="text-[10px] font-black text-white uppercase">{d.recommendation}</p>
-                      <p className="text-[9px] text-white/30 mt-0.5">{d.category}</p>
+                      <p className="text-[10px] font-black text-[var(--text-main)] uppercase">{d.recommendation}</p>
+                      <p className="text-[9px] text-[var(--text-muted)] mt-0.5">{d.category}</p>
                     </div>
                   </div>
                 ))}
@@ -344,9 +354,9 @@ export default function EcgAnalysis({ report, token, onComplete }) {
           )}
         </div>
 
-        <div className="p-6 rounded-[24px] border border-white/5 flex items-center gap-4 opacity-40">
+        <div className="p-6 rounded-[24px] border border-[var(--border-subtle)] flex items-center gap-4 opacity-40">
           <ShieldCheck className="w-6 h-6 text-rose-500 shrink-0" />
-          <p className="text-[9px] font-bold uppercase tracking-wider text-white/60 leading-relaxed">
+          <p className="text-[9px] font-bold uppercase tracking-wider text-[var(--text-muted)] leading-relaxed">
             ECG analysis: MaxViT PyTorch model via Flask → Neural Llama-4 Scout clinical narrative. Consult a cardiologist before clinical decisions.
           </p>
         </div>

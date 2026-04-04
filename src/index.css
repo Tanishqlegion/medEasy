@@ -23,50 +23,50 @@
 
 @layer base {
   :root {
-    --bg-main: #f8fafc;
-    /* soft white / light blue tint */
-    --text-main: #0f172a;
-    --text-muted: #64748b;
+    --bg-main: #fcfdfe;
+    /* pure clinical white */
+    --text-main: #020617;
+    /* dark navy */
+    --text-muted: #475569;
+    /* heavier gray for light mode */
     --accent-primary: #0ea5e9;
-    /* sky blue */
-    --accent-secondary: #2563eb;
-    /* royal blue */
+    --accent-secondary: #6366f1;
     --status-normal: #10b981;
-    /* green */
     --status-warning: #f59e0b;
-    /* amber */
     --status-alert: #ef4444;
-    /* red */
 
-    --glass-bg: rgba(255, 255, 255, 0.7);
-    --glass-border: rgba(14, 165, 233, 0.1);
-    --glass-hover: rgba(255, 255, 255, 0.9);
-    --panel-shadow: 0 8px 32px -4px rgba(14, 165, 233, 0.08);
+    --glass-bg: rgba(255, 255, 255, 0.8);
+    --glass-border: rgba(14, 165, 233, 0.15);
+    --glass-hover: rgba(255, 255, 255, 0.95);
+    --panel-shadow: 0 10px 40px -10px rgba(14, 165, 233, 0.12);
+    --input-bg: rgba(255, 255, 255, 0.6);
+    --input-border: rgba(14, 165, 233, 0.1);
+    --border-subtle: rgba(14, 165, 233, 0.2);
+    
     --card-radius: 24px;
-
-    --gradient-primary: linear-gradient(135deg, #0ea5e9 0%, #2563eb 100%);
-    --gradient-surface: linear-gradient(135deg, rgba(255, 255, 255, 0.9) 0%, rgba(255, 255, 255, 0.6) 100%);
+    --gradient-primary: linear-gradient(135deg, #0ea5e9 0%, #6366f1 100%);
+    --gradient-surface: linear-gradient(135deg, rgba(255, 255, 255, 0.95) 0%, rgba(248, 250, 252, 0.8) 100%);
   }
 
   .dark {
     --bg-main: #020617;
-    /* deep navy / near-black */
     --text-main: #f1f5f9;
     --text-muted: #94a3b8;
     --accent-primary: #38bdf8;
-    /* neon blue / electric blue */
     --accent-secondary: #818cf8;
-    /* soft purple/blue */
     --status-normal: #10b981;
     --status-warning: #f59e0b;
     --status-alert: #f43f5e;
-    /* rose-500 equivalent for abnormal */
 
-    --glass-bg: rgba(2, 6, 23, 0.7);
-    --glass-border: rgba(56, 189, 248, 0.15);
+    --glass-bg: rgba(2, 6, 23, 0.75);
+    --glass-border: rgba(56, 189, 248, 0.2);
     --glass-hover: rgba(15, 23, 42, 0.9);
-    --panel-shadow: 0 20px 50px -12px rgba(0, 0, 0, 1);
-    --gradient-surface: linear-gradient(165deg, rgba(15, 23, 42, 0.9) 0%, rgba(2, 6, 23, 0.8) 100%);
+    --panel-shadow: 0 20px 60px -15px rgba(0, 0, 0, 0.8);
+    --input-bg: rgba(255, 255, 255, 0.03);
+    --input-border: rgba(255, 255, 255, 0.08);
+    --border-subtle: rgba(255, 255, 255, 0.06);
+
+    --gradient-surface: linear-gradient(165deg, rgba(15, 23, 42, 0.9) 0%, rgba(2, 6, 23, 0.85) 100%);
     --card-radius: 32px;
   }
 

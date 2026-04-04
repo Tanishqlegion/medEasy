@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
-import { Calendar, FileText, Activity, HeartPulse, ShieldAlert, User, LogOut, Loader2, Microscope, Sparkles, ChevronRight, TrendingUp, ArrowRight, Eye, FlaskConical, ExternalLink } from 'lucide-react';
+import { Calendar, FileText, Activity, HeartPulse, ShieldAlert, User, LogOut, Loader2, Microscope, Sparkles, ChevronRight, TrendingUp, ArrowRight, Eye, FlaskConical, ExternalLink, Droplets } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Button } from '../components/Button';
 import { cn } from '../components/Button';
 import { useAuth } from '../context/AuthContext';
+import { useTheme } from '../context/ThemeContext';
 import HealthChatbot from '../components/HealthChatbot';
 import { motion } from 'framer-motion';
 
@@ -16,6 +17,7 @@ const fadeInUp = {
 
 export default function PatientDashboard() {
   const { user, token, logout } = useAuth();
+  const { theme } = useTheme();
   const navigate = useNavigate();
   const [history, setHistory] = useState([]);
   const [appointments, setAppointments] = useState([]);
@@ -157,13 +159,14 @@ export default function PatientDashboard() {
         className="mb-8"
       >
         <h2 className="text-[11px] font-black uppercase tracking-[0.3em] mb-4 ml-2 text-[var(--text-muted)]">Core Diagnostic Arrays</h2>
-        <div className="grid grid-cols-2 lg:grid-cols-5 gap-6">
+        <div className="grid grid-cols-2 lg:grid-cols-6 gap-6">
           {[
             { id: 'appointments', label: 'Book Appointment', icon: Calendar, color: 'text-emerald-500', bg: 'bg-emerald-500/10 border-emerald-500/20', desc: 'Schedule Labs & Docs', to: '/appointments/book' },
             { id: 'report', label: 'Report Lab', icon: FileText, color: 'text-cyan-500', bg: 'bg-cyan-500/10 border-cyan-500/20', desc: 'Blood & Vitals', to: '/analyze-patient?mode=report' },
             { id: 'ecg', label: 'ECG Analysis', icon: HeartPulse, color: 'text-rose-500', bg: 'bg-rose-500/10 border-rose-500/20', desc: 'Cardiac Rhythm', to: '/analyze-patient?mode=ecg' },
             { id: 'mri', label: 'MRI Scanner', icon: Microscope, color: 'text-violet-500', bg: 'bg-violet-500/10 border-violet-500/20', desc: 'Magnetic Resonance', to: '/analyze-patient?mode=mri' },
             { id: 'ct', label: 'CT Scanner', icon: Activity, color: 'text-amber-500', bg: 'bg-amber-500/10 border-amber-500/20', desc: '3D Imaging', to: '/analyze-patient?mode=ct' },
+            { id: 'kidney', label: 'Kidney Scan', icon: Droplets, color: 'text-blue-500', bg: 'bg-blue-500/10 border-blue-500/20', desc: 'Stone Detection', to: '/analyze-patient?mode=kidney' },
           ].map((item, idx) => (
             <Link
               key={item.id}
@@ -225,21 +228,23 @@ export default function PatientDashboard() {
                         <stop offset="95%" stopColor="#06b6d4" stopOpacity={0} />
                       </linearGradient>
                     </defs>
-                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(255,255,255,0.03)" />
-                    <XAxis dataKey="date" stroke="rgba(255,255,255,0.2)" fontSize={9} tickLine={false} axisLine={false} tick={{ fontWeight: 800 }} dy={10} />
-                    <YAxis reversed={false} stroke="rgba(255,255,255,0.2)" fontSize={9} tickLine={false} axisLine={false} domain={[0, 100]} tick={{ fontWeight: 800 }} tickFormatter={(val) => `${val}`} />
+                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--border-subtle)" />
+                    <XAxis dataKey="date" stroke="var(--text-muted)" fontSize={9} tickLine={false} axisLine={false} tick={{ fontWeight: 800 }} dy={10} />
+                    <YAxis reversed={false} stroke="var(--text-muted)" fontSize={9} tickLine={false} axisLine={false} domain={[0, 100]} tick={{ fontWeight: 800 }} tickFormatter={(val) => `${val}`} />
                     <Tooltip
                       contentStyle={{
-                        backgroundColor: 'rgba(15, 23, 42, 0.95)',
-                        borderColor: 'rgba(255,255,255,0.1)',
+                        backgroundColor: 'var(--glass-bg)',
+                        borderColor: 'var(--glass-border)',
                         borderRadius: '16px',
+                        color: 'var(--text-main)',
                         fontSize: '11px',
                         fontWeight: 800,
                         textTransform: 'uppercase',
                         letterSpacing: '0.1em',
-                        boxShadow: '0 20px 40px -10px rgba(0,0,0,0.5)',
+                        boxShadow: 'var(--panel-shadow)',
                         backdropFilter: 'blur(10px)'
                       }}
+                      itemStyle={{ color: 'var(--text-main)' }}
                     />
                     <Area type="monotone" dataKey="value" stroke="#06b6d4" strokeWidth={4} fillOpacity={1} fill="url(#colorVal)" animationDuration={2000} />
                   </AreaChart>
@@ -264,11 +269,11 @@ export default function PatientDashboard() {
           </div>
           <div>
             <div className="flex items-center gap-2 mb-2">
-              <h2 className="text-base font-black uppercase tracking-[0.2em]">Stitch AI Chat</h2>
-              <div className="px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-500 text-[8px] font-black uppercase tracking-widest">RAG Active</div>
+              <h2 className="text-base font-black uppercase tracking-[0.2em]">JARVIS</h2>
+              <div className="px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-500 text-[8px] font-black uppercase tracking-widest">AI Health Assist</div>
             </div>
             <p className="text-[11px] text-[var(--text-muted)] font-black uppercase tracking-wider opacity-60 leading-relaxed">
-              Retrieve clinical insights from your specific history or query our biological knowledge archives via the RAG engine.
+              Retrieve clinical insights from your specific history or query our biological knowledge archives via the intelligence engine.
             </p>
           </div>
           <div className="flex items-center gap-2 text-xs font-black text-[var(--accent-primary)] group-hover:gap-4 transition-all uppercase tracking-widest mt-auto">
@@ -323,9 +328,9 @@ export default function PatientDashboard() {
           </div>
           <div className="space-y-4">
             {appointments.map((p) => (
-              <div key={p.id} className="flex flex-col md:flex-row md:items-center justify-between p-6 rounded-2xl bg-[#030712] border border-white/5 group hover:border-cyan-500/20 transition-colors">
+              <div key={p.id} className="flex flex-col md:flex-row md:items-center justify-between p-6 rounded-2xl bg-[var(--input-bg)] border border-[var(--glass-border)] shadow-lg group hover:border-[var(--accent-primary)]/40 transition-all">
                 <div className="flex items-center gap-4">
-                  <div className="w-12 h-12 bg-white/5 rounded-xl flex items-center justify-center text-cyan-500 shrink-0"><Activity className="w-5 h-5" /></div>
+                  <div className="w-12 h-12 bg-[var(--bg-main)]/50 rounded-xl flex items-center justify-center text-cyan-500 shrink-0 border border-[var(--glass-border)]"><Activity className="w-5 h-5" /></div>
                   <div>
                     <div className="text-sm font-bold tracking-tight mb-1">{p.lab} <span className="text-[var(--text-muted)] mx-2">/</span> <span className="text-cyan-400">{p.test}</span></div>
                     <div className="text-[10px] font-black uppercase tracking-[0.2em] text-[var(--text-muted)] opacity-60">ID: {p.bid} · {p.doctor} · {p.date}</div>
@@ -355,7 +360,7 @@ export default function PatientDashboard() {
         initial="initial"
         animate="animate"
         transition={{ delay: 0.48 }}
-        className="glass-panel p-10 rounded-[40px] mb-12 border-white/5 relative overflow-hidden"
+        className="glass-panel p-10 rounded-[40px] mb-12 border-[var(--glass-border)] shadow-lg relative overflow-hidden"
       >
         <div className="absolute top-0 right-0 w-48 h-48 bg-emerald-500/5 blur-[80px]" />
         <div className="flex items-center justify-between mb-8 relative z-10">
@@ -364,7 +369,7 @@ export default function PatientDashboard() {
               <FlaskConical className="w-6 h-6 text-emerald-500" />
             </div>
             <div>
-              <h2 className="text-base font-black uppercase tracking-[0.2em]">Lab Reports</h2>
+              <h2 className="text-base font-black uppercase tracking-[0.2em] text-[var(--text-main)]">Lab Reports</h2>
               <p className="text-[10px] uppercase tracking-widest text-[var(--text-muted)] opacity-60">From Your Diagnostic Facility</p>
             </div>
           </div>
@@ -377,27 +382,27 @@ export default function PatientDashboard() {
             <p className="text-[10px] font-black uppercase tracking-[0.3em]">Syncing lab data...</p>
           </div>
         ) : labReports.length === 0 ? (
-          <div className="py-16 text-center border-2 border-dashed border-white/5 rounded-[28px]">
-            <FlaskConical className="w-12 h-12 text-white/10 mx-auto mb-4" />
-            <p className="text-[10px] font-black uppercase tracking-[0.3em] text-white/20">No lab reports received</p>
-            <p className="text-[9px] text-white/10 mt-2 font-bold uppercase tracking-widest">Reports uploaded by your lab will appear here</p>
+          <div className="py-16 text-center border-2 border-dashed border-[var(--border-subtle)] shadow-lg rounded-[28px]">
+            <FlaskConical className="w-12 h-12 text-[var(--text-muted)] opacity-20 mx-auto mb-4" />
+            <p className="text-[10px] font-black uppercase tracking-[0.3em] text-[var(--text-muted)] opacity-40">No lab reports received</p>
+            <p className="text-[9px] text-[var(--text-muted)] opacity-20 mt-2 font-bold uppercase tracking-widest">Reports uploaded by your lab will appear here</p>
           </div>
         ) : (
           <div className="space-y-4 relative z-10">
             {labReports.map(report => (
               <div key={report._id}
-                className="flex flex-col md:flex-row md:items-center justify-between p-6 rounded-[24px] bg-[#030712] border border-white/5 hover:border-emerald-500/20 transition-all group"
+                className="flex flex-col md:flex-row md:items-center justify-between p-6 rounded-[24px] bg-[var(--input-bg)] border border-[var(--glass-border)] shadow-lg hover:border-emerald-500/30 transition-all group"
               >
                 <div className="flex items-center gap-5 mb-4 md:mb-0">
                   <div className="w-12 h-12 rounded-2xl bg-emerald-500/10 flex items-center justify-center border border-emerald-500/20 shrink-0">
                     <FileText className="w-5 h-5 text-emerald-500" />
                   </div>
                   <div>
-                    <p className="text-sm font-bold text-white mb-0.5">{report.reportTitle}</p>
+                    <p className="text-sm font-bold text-[var(--text-main)] mb-0.5">{report.reportTitle}</p>
                     <div className="flex items-center gap-3">
-                      <span className="text-[9px] font-black text-emerald-400 bg-emerald-500/10 px-2.5 py-1 rounded-full border border-emerald-500/20 uppercase tracking-wider">{report.testType}</span>
-                      <span className="text-[10px] text-white/30">{report.labName}</span>
-                      <span className="text-[10px] text-white/20">· {new Date(report.uploadedAt).toLocaleDateString()}</span>
+                      <span className="text-[9px] font-black text-emerald-600 bg-emerald-500/10 px-2.5 py-1 rounded-full border border-emerald-500/20 uppercase tracking-wider">{report.testType}</span>
+                      <span className="text-[10px] text-[var(--text-muted)] opacity-60">{report.labName}</span>
+                      <span className="text-[10px] text-[var(--text-muted)] opacity-40">· {new Date(report.uploadedAt).toLocaleDateString()}</span>
                     </div>
                   </div>
                 </div>
@@ -463,7 +468,7 @@ export default function PatientDashboard() {
               <p className="text-[11px] font-black uppercase tracking-[0.3em] opacity-40">Decrypting clinical history...</p>
             </div>
           ) : history.length === 0 ? (
-            <div className="py-20 text-center border-2 border-dashed border-white/5 rounded-[32px] group">
+            <div className="py-20 text-center border-2 border-dashed border-[var(--glass-border)] shadow-lg rounded-[32px] group">
               <FileText className="w-16 h-16 text-[var(--text-muted)] opacity-5 mx-auto mb-6 group-hover:scale-110 transition-transform duration-500" />
               <p className="text-sm text-[var(--text-muted)] font-black uppercase tracking-widest opacity-30">Archives Empty</p>
               <p className="text-[10px] text-[var(--text-muted)] opacity-20 mt-3 font-bold uppercase tracking-widest">Awaiting primary diagnostic capture</p>
@@ -472,14 +477,14 @@ export default function PatientDashboard() {
             <div className="overflow-x-auto">
               <table className="w-full text-left">
                 <thead>
-                  <tr className="border-b border-white/5 text-[var(--text-muted)] text-[11px] font-black uppercase tracking-[0.3em]">
+                  <tr className="border-b border-[var(--glass-border)] shadow-lg text-[var(--text-muted)] text-[11px] font-black uppercase tracking-[0.3em]">
                     <th className="pb-6 px-6">Timestamp</th>
                     <th className="pb-6 px-6">Module</th>
                     <th className="pb-6 px-6">Insight Stream</th>
                     <th className="pb-6 px-6 text-right">Access</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-white/5">
+                <tbody className="divide-y divide-[var(--border-subtle)]">
                   {history.map((item, idx) => (
                     <motion.tr
                       initial={{ opacity: 0, x: -10 }}
@@ -496,7 +501,7 @@ export default function PatientDashboard() {
                         {item.summary || item.prediction || `Neural analysis sequence completed for ${item.type?.toUpperCase()}`}
                       </td>
                       <td className="py-6 px-6 text-right">
-                        <div className="w-8 h-8 rounded-lg bg-white/5 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity ml-auto">
+                        <div className="w-8 h-8 rounded-lg bg-[var(--input-bg)] flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity ml-auto">
                           <ChevronRight className="w-4 h-4 text-cyan-500" />
                         </div>
                       </td>
@@ -518,17 +523,17 @@ export default function PatientDashboard() {
 
       {/* Report Summary Modal from Booking/Lab Flow */}
       {reportModal.open && (
-        <div className="fixed inset-0 bg-black/80 backdrop-blur-xl z-50 flex items-center justify-center p-4">
-          <div className="glass-panel p-0 rounded-[32px] w-full max-w-2xl border-white/10 overflow-hidden flex flex-col max-h-[85vh]">
-            <div className="p-6 border-b border-white/5 flex items-center justify-between shrink-0">
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-xl z-50 flex items-center justify-center p-4">
+          <div className="bg-[var(--bg-main)] p-0 rounded-[32px] w-full max-w-2xl border border-[var(--glass-border)] overflow-hidden flex flex-col max-h-[85vh] shadow-2xl">
+            <div className="p-6 border-b border-[var(--border-subtle)] flex items-center justify-between shrink-0">
               <div className="flex items-center gap-4">
                 <div className={`w-12 h-12 rounded-2xl bg-gradient-to-br ${currentResult.iconColor} flex items-center justify-center text-2xl shadow-lg`}>{currentResult.icon}</div>
                 <div>
                   <div className="text-[9px] font-black uppercase tracking-[0.2em] text-[var(--text-muted)] mb-1">Analysed By</div>
-                  <div className="font-bold text-sm bg-gradient-to-r from-white to-white/60 text-transparent bg-clip-text uppercase tracking-wider">{currentResult.model}</div>
+                  <div className="font-bold text-sm text-[var(--text-main)] uppercase tracking-wider">{currentResult.model}</div>
                 </div>
               </div>
-              <button className="w-8 h-8 rounded-full bg-white/5 flex items-center justify-center text-white/50 hover:text-white" onClick={() => setReportModal({ open: false, test: '', name: '', bid: '', loading: false })}>✕</button>
+              <button className="w-8 h-8 rounded-full bg-[var(--input-bg)] flex items-center justify-center text-[var(--text-muted)] hover:text-[var(--text-main)] border border-[var(--border-subtle)]" onClick={() => setReportModal({ open: false, test: '', name: '', bid: '', loading: false })}>✕</button>
             </div>
 
             <div className="p-8 overflow-y-auto w-[100%] hide-scrollbar">
@@ -543,19 +548,19 @@ export default function PatientDashboard() {
                     <div className="text-[9px] font-black uppercase tracking-[0.2em] text-[var(--text-muted)] mb-2">Patient Profile Segment</div>
                     <div className="text-lg font-bold">{reportModal.name} <span className="text-xs font-mono text-[var(--text-muted)] opacity-60 ml-3">{reportModal.bid}</span></div>
                   </div>
-                  <hr className="border-white/5 border-dashed" />
+                  <hr className="border-[var(--border-subtle)] border-dashed" />
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div className="bg-[#030712] rounded-2xl p-6 border border-white/5">
+                    <div className="bg-[var(--input-bg)] rounded-2xl p-6 border border-[var(--glass-border)]">
                       <div className="text-[9px] font-black uppercase tracking-[0.2em] text-[var(--text-muted)] mb-3 flex items-center gap-2"><Eye className="w-3 h-3 text-cyan-400" /> AI Hypothesis</div>
                       <div className="text-xl font-black uppercase tracking-tight leading-tight">{currentResult.prediction}</div>
                     </div>
                     <div className="grid grid-cols-2 gap-4">
-                      <div className="bg-[#030712] rounded-2xl p-5 border border-white/5 flex flex-col justify-center">
+                      <div className="bg-[var(--input-bg)] rounded-2xl p-5 border border-[var(--glass-border)] flex flex-col justify-center">
                         <div className="text-[9px] font-black uppercase tracking-[0.2em] text-[var(--text-muted)] mb-1">Confidence</div>
                         <div className="text-2xl font-black text-cyan-400">{currentResult.confidence}</div>
                       </div>
-                      <div className="bg-[#030712] rounded-2xl p-5 border border-white/5 flex flex-col justify-center">
+                      <div className="bg-[var(--input-bg)] rounded-2xl p-5 border border-[var(--glass-border)] flex flex-col justify-center">
                         <div className="text-[9px] font-black uppercase tracking-[0.2em] text-[var(--text-muted)] mb-3">Risk Level</div>
                         <div>
                           <span className={cn("px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest border", currentResult.risk === 'Low' ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' : 'bg-rose-500/10 text-rose-400 border-rose-500/20')}>{currentResult.risk}</span>
@@ -569,7 +574,7 @@ export default function PatientDashboard() {
                     <p className="text-sm leading-relaxed text-[var(--text-muted)]">{currentResult.reasoning}</p>
                   </div>
 
-                  <div className="bg-white/[0.02] rounded-3xl p-6 border border-white/5">
+                  <div className="bg-[var(--bg-main)] rounded-3xl p-6 border border-[var(--glass-border)] shadow-sm">
                     <div className="text-[9px] font-black uppercase tracking-[0.2em] text-[var(--text-muted)] mb-5">Tactical Directives</div>
                     <ul className="space-y-3">
                       {currentResult.recs.map((rec, i) => (

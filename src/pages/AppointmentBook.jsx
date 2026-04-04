@@ -182,25 +182,25 @@ export default function AppointmentBook() {
             <div className="blob w-[600px] h-[600px] bg-cyan-500/5 -top-40 -left-60 blur-[150px]" />
             <div className="blob w-[600px] h-[600px] bg-indigo-500/5 -bottom-40 -right-60 blur-[150px]" />
 
-            <h1 className="text-4xl font-black uppercase tracking-tighter mb-2 text-center text-white">Book Appointment</h1>
-            <p className="text-center text-[11px] font-black uppercase tracking-[0.3em] text-white/30 mb-10">Select your city → lab → test → confirm</p>
+            <h1 className="text-4xl font-black uppercase tracking-tighter mb-2 text-center text-[var(--text-main)]">Book Appointment</h1>
+            <p className="text-center text-[11px] font-black uppercase tracking-[0.3em] text-[var(--text-muted)] opacity-60 mb-10">Select your city → lab → test → confirm</p>
 
             {/* Progress steps */}
             <div className="flex items-center justify-center gap-2 mb-10">
                 {['city', 'lab', 'details', 'confirm'].map((s, i) => (
                     <React.Fragment key={s}>
                         <div className={cn("flex items-center gap-2 px-4 py-2 rounded-2xl text-[9px] font-black uppercase tracking-widest border transition-all", 
-                            step === s ? "bg-cyan-500/10 border-cyan-500/30 text-cyan-400" : 
-                            ['city','lab','details','confirm'].indexOf(step) > i ? "bg-emerald-500/10 border-emerald-500/20 text-emerald-400" :
-                            "border-white/5 text-white/20"
+                            step === s ? "bg-cyan-500/10 border-cyan-500/30 text-cyan-500 shadow-sm" : 
+                            ['city','lab','details','confirm'].indexOf(step) > i ? "bg-emerald-500/10 border-emerald-500/20 text-emerald-500" :
+                            "border-[var(--glass-border)] text-[var(--text-muted)] opacity-40"
                         )}>
                             <span className={cn("w-4 h-4 rounded-full flex items-center justify-center text-[8px] font-black",
                                 step === s ? "bg-cyan-500 text-white" :
-                                ['city','lab','details','confirm'].indexOf(step) > i ? "bg-emerald-500 text-white" : "bg-white/10"
+                                ['city','lab','details','confirm'].indexOf(step) > i ? "bg-emerald-500 text-white" : "bg-[var(--text-muted)] opacity-20"
                             )}>{i + 1}</span>
                             {s}
                         </div>
-                        {i < 3 && <ChevronRight className="w-3 h-3 text-white/10" />}
+                        {i < 3 && <ChevronRight className="w-3 h-3 text-[var(--text-muted)] opacity-20" />}
                     </React.Fragment>
                 ))}
             </div>
@@ -210,8 +210,8 @@ export default function AppointmentBook() {
                 {/* ── STEP 1: CITY ── */}
                 {step === 'city' && (
                     <motion.div key="city" variants={fadeInUp} initial="initial" animate="animate" exit={{ opacity: 0 }}>
-                        <div className="glass-panel p-10 rounded-[40px] border-white/5">
-                            <h2 className="text-[10px] font-black uppercase tracking-[0.3em] text-white/40 mb-8 flex items-center gap-3">
+                        <div className="glass-panel p-10 rounded-[40px] border-[var(--glass-border)] shadow-lg">
+                            <h2 className="text-[10px] font-black uppercase tracking-[0.3em] text-[var(--text-muted)] opacity-50 mb-8 flex items-center gap-3">
                                 <MapPin className="w-4 h-4 text-cyan-500" /> Select Your City
                             </h2>
                             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -271,27 +271,27 @@ export default function AppointmentBook() {
                                     {availableLabs.map(lab => (
                                         <button key={lab._id}
                                             onClick={() => handleLabSelect(lab)}
-                                            className="w-full flex items-center justify-between p-6 rounded-[24px] bg-[#030712] border border-white/5 hover:border-emerald-500/30 hover:bg-emerald-500/[0.03] transition-all group text-left"
+                                            className="w-full flex items-center justify-between p-6 rounded-[24px] bg-[var(--input-bg)] border border-[var(--input-border)] hover:border-emerald-500/30 hover:bg-emerald-500/[0.03] transition-all group text-left shadow-sm"
                                         >
                                             <div className="flex items-center gap-5">
                                                 <div className="w-14 h-14 rounded-[18px] bg-gradient-to-br from-emerald-500/20 to-teal-500/20 border border-emerald-500/20 flex items-center justify-center">
                                                     <FlaskConical className="w-7 h-7 text-emerald-500" />
                                                 </div>
                                                 <div>
-                                                    <p className="text-base font-black text-white uppercase tracking-tight mb-1">{lab.name}</p>
+                                                    <p className="text-base font-black text-[var(--text-main)] uppercase tracking-tight mb-1">{lab.name}</p>
                                                     <div className="flex items-center gap-2">
                                                         <MapPin className="w-3 h-3 text-emerald-500" />
-                                                        <p className="text-[10px] text-emerald-400 font-black uppercase tracking-widest">{lab.city}</p>
-                                                        <span className="text-white/20">·</span>
-                                                        <p className="text-[10px] text-white/30 font-mono">{lab.email}</p>
+                                                        <p className="text-[10px] text-emerald-500 font-black uppercase tracking-widest">{lab.city}</p>
+                                                        <span className="text-[var(--text-muted)] opacity-20">·</span>
+                                                        <p className="text-[10px] text-[var(--text-muted)] opacity-50 font-mono">{lab.email}</p>
                                                     </div>
                                                 </div>
                                             </div>
                                             <div className="flex items-center gap-3">
-                                                <span className="bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 px-3 py-1.5 rounded-xl text-[9px] font-black uppercase tracking-widest">
+                                                <span className="bg-emerald-500/10 text-emerald-500 border border-emerald-500/20 px-3 py-1.5 rounded-xl text-[9px] font-black uppercase tracking-widest">
                                                     Active
                                                 </span>
-                                                <ChevronRight className="w-5 h-5 text-white/20 group-hover:text-white group-hover:translate-x-1 transition-all" />
+                                                <ChevronRight className="w-5 h-5 text-[var(--text-muted)] opacity-40 group-hover:text-[var(--text-main)] group-hover:translate-x-1 transition-all" />
                                             </div>
                                         </button>
                                     ))}
@@ -312,14 +312,14 @@ export default function AppointmentBook() {
                                         <FlaskConical className="w-7 h-7 text-emerald-500" />
                                     </div>
                                     <div>
-                                        <p className="text-base font-black text-white uppercase tracking-tight">{selectedLab.name}</p>
+                                        <p className="text-base font-black text-[var(--text-main)] uppercase tracking-tight">{selectedLab.name}</p>
                                         <div className="flex items-center gap-2">
                                             <MapPin className="w-3 h-3 text-emerald-500" />
-                                            <p className="text-[10px] text-emerald-400 font-black uppercase tracking-widest">{selectedCity}</p>
+                                            <p className="text-[10px] text-emerald-500 font-black uppercase tracking-widest">{selectedCity}</p>
                                         </div>
                                     </div>
                                 </div>
-                                <button onClick={() => setStep('lab')} className="flex items-center gap-2 text-[9px] font-black uppercase tracking-widest text-white/30 hover:text-white transition-colors">
+                                <button onClick={() => setStep('lab')} className="flex items-center gap-2 text-[9px] font-black uppercase tracking-widest text-[var(--text-muted)] opacity-50 hover:opacity-100 transition-opacity">
                                     <ArrowLeft className="w-3 h-3" /> Change Lab
                                 </button>
                             </div>
@@ -342,10 +342,10 @@ export default function AppointmentBook() {
                                         >
                                             <opt.icon className={cn('w-6 h-6 shrink-0', test === opt.value ? opt.color : 'text-white/40')} />
                                             <div className="min-w-0">
-                                                <p className={cn('text-[10px] font-black uppercase tracking-tight leading-tight', test === opt.value ? opt.color : 'text-white')}>
+                                                <p className={cn('text-[10px] font-black uppercase tracking-tight leading-tight', test === opt.value ? opt.color : 'text-[var(--text-main)]')}>
                                                     {opt.value}
                                                 </p>
-                                                <p className="text-[8px] text-white/30 uppercase tracking-wide mt-0.5 truncate">
+                                                <p className="text-[8px] text-[var(--text-muted)] opacity-50 uppercase tracking-wide mt-0.5 truncate">
                                                     {opt.model}
                                                 </p>
                                             </div>
@@ -360,24 +360,24 @@ export default function AppointmentBook() {
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-5 mb-8">
                                 {/* Date */}
                                 <div className="space-y-2">
-                                    <label className="text-[9px] font-black uppercase tracking-[0.3em] text-white/40 block">Date</label>
+                                    <label className="text-[9px] font-black uppercase tracking-[0.3em] text-[var(--text-muted)] opacity-50 block">Date</label>
                                     <input
                                         type="date"
                                         value={date}
                                         min={new Date().toISOString().split('T')[0]}
                                         onChange={e => setDate(e.target.value)}
-                                        className="w-full bg-[#030712] border border-white/10 rounded-2xl px-4 py-3.5 text-sm font-bold outline-none focus:border-cyan-500/50 transition-all font-mono uppercase"
+                                        className="w-full bg-[var(--input-bg)] border border-[var(--input-border)] rounded-2xl px-4 py-3.5 text-sm font-bold text-[var(--text-main)] outline-none focus:border-cyan-500/50 transition-all font-mono uppercase"
                                     />
                                 </div>
                                 {/* Slot */}
                                 <div className="space-y-2">
-                                    <label className="text-[9px] font-black uppercase tracking-[0.3em] text-white/40 block">Time Slot</label>
+                                    <label className="text-[9px] font-black uppercase tracking-[0.3em] text-[var(--text-muted)] opacity-50 block">Time Slot</label>
                                     <select
                                         value={slot}
                                         onChange={e => setSlot(e.target.value)}
-                                        className="w-full bg-[#030712] border border-white/10 rounded-2xl px-4 py-3.5 text-sm font-bold outline-none focus:border-cyan-500/50 transition-all appearance-none cursor-pointer"
+                                        className="w-full bg-[var(--input-bg)] border border-[var(--input-border)] rounded-2xl px-4 py-3.5 text-sm font-bold text-[var(--text-main)] outline-none focus:border-cyan-500/50 transition-all appearance-none cursor-pointer"
                                     >
-                                        {SLOTS.map(o => <option key={o} value={o} className="bg-[#020617]">{o}</option>)}
+                                        {SLOTS.map(o => <option key={o} value={o} className="bg-[var(--bg-main)]">{o}</option>)}
                                     </select>
                                 </div>
                             </div>
@@ -405,46 +405,45 @@ export default function AppointmentBook() {
                 {/* ── STEP 4: CONFIRM ── */}
                 {step === 'confirm' && bookedAppointment && (
                     <motion.div key="confirm" variants={fadeInUp} initial="initial" animate="animate" exit={{ opacity: 0 }}>
-                        <div className="glass-panel p-12 rounded-[40px] border-emerald-500/20 text-center">
+                        <div className="glass-panel p-12 rounded-[40px] border-emerald-500/20 text-center shadow-lg">
                             <div className="w-20 h-20 bg-emerald-500/10 border-2 border-emerald-500/30 flex items-center justify-center rounded-[28px] mx-auto mb-6 shadow-[0_0_40px_-10px_rgba(16,185,129,0.4)]">
                                 <CheckCircle2 className="w-10 h-10 text-emerald-500" />
                             </div>
-                            <h2 className="text-3xl font-black uppercase tracking-tighter text-emerald-400 mb-2">Appointment Confirmed!</h2>
-                            <p className="text-[10px] font-black uppercase tracking-[0.3em] text-white/30 mb-8">Your booking has been saved to the system</p>
+                            <h2 className="text-3xl font-black uppercase tracking-tighter text-emerald-500 mb-2">Appointment Confirmed!</h2>
+                            <p className="text-[10px] font-black uppercase tracking-[0.3em] text-[var(--text-muted)] opacity-60 mb-8">Your booking has been saved to the system</p>
 
                             <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-10 text-left">
                                 {[
                                     { label: 'Booking ID', value: bookedAppointment.bid, mono: true },
                                     { label: 'Lab', value: bookedAppointment.labName },
                                 ].map((item, i) => (
-                                    <div key={i} className="p-5 rounded-[20px] bg-white/[0.03] border border-white/5">
-                                        <p className="text-[9px] font-black uppercase tracking-[0.3em] text-white/30 mb-1">{item.label}</p>
-                                        <p className={cn("text-sm font-black text-white", item.mono && "font-mono text-cyan-400")}>{item.value}</p>
+                                    <div key={i} className="p-5 rounded-[20px] bg-[var(--input-bg)] border border-[var(--input-border)]">
+                                        <p className="text-[9px] font-black uppercase tracking-[0.3em] text-[var(--text-muted)] opacity-50 mb-1">{item.label}</p>
+                                        <p className={cn("text-sm font-black text-[var(--text-main)]", item.mono && "font-mono text-cyan-500")}>{item.value}</p>
                                     </div>
                                 ))}
                                 {/* Test + Model Info */}
-                                <div className="p-5 rounded-[20px] bg-white/[0.03] border border-white/5">
-                                    <p className="text-[9px] font-black uppercase tracking-[0.3em] text-white/30 mb-1">Test</p>
+                                <div className="p-5 rounded-[20px] bg-[var(--input-bg)] border border-[var(--input-border)]">
+                                    <p className="text-[9px] font-black uppercase tracking-[0.3em] text-[var(--text-muted)] opacity-50 mb-1">Test</p>
                                     <div className="flex items-center gap-2">
                                         {(() => {
                                             const IconObj = TEST_OPTIONS.find(o => o.value === bookedAppointment.test)?.icon || Activity;
-                                            return <IconObj className="w-5 h-5 text-cyan-400" />;
+                                            return <IconObj className="w-5 h-5 text-cyan-500" />;
                                         })()}
-                                        <p className="text-sm font-black text-white">{bookedAppointment.test}</p>
+                                        <p className="text-sm font-black text-[var(--text-main)]">{bookedAppointment.test}</p>
                                     </div>
-                                    <p className="text-[8px] text-white/30 uppercase tracking-widest mt-1">
+                                    <p className="text-[8px] text-[var(--text-muted)] opacity-40 uppercase tracking-widest mt-1">
                                         AI: {TEST_OPTIONS.find(o => o.value === bookedAppointment.test)?.model || 'Clinical Vision'}
                                     </p>
                                 </div>
-                                <div className="p-5 rounded-[20px] bg-white/[0.03] border border-white/5">
-                                    <p className="text-[9px] font-black uppercase tracking-[0.3em] text-white/30 mb-1">Date & Slot</p>
-                                    <p className="text-sm font-black text-white">{bookedAppointment.date} · {bookedAppointment.slot}</p>
+                                <div className="p-5 rounded-[20px] bg-[var(--input-bg)] border border-[var(--input-border)]">
+                                    <p className="text-[9px] font-black uppercase tracking-[0.3em] text-[var(--text-muted)] opacity-50 mb-1">Date & Slot</p>
+                                    <p className="text-sm font-black text-[var(--text-main)]">{bookedAppointment.date} · {bookedAppointment.slot}</p>
                                 </div>
-
                             </div>
 
                             <div className="flex gap-4 justify-center">
-                                <Button onClick={resetFlow} variant="outline" className="h-12 px-8 rounded-2xl border-white/10 font-black uppercase tracking-widest text-[10px]">
+                                <Button onClick={resetFlow} variant="outline" className="h-12 px-8 rounded-2xl border-[var(--glass-border)] font-black uppercase tracking-widest text-[10px] text-[var(--text-main)]">
                                     Book Another
                                 </Button>
                                 <Button onClick={() => navigate('/patient-dashboard')} className="h-12 px-8 rounded-2xl bg-cyan-600 font-black uppercase tracking-widest text-[10px]">
@@ -458,8 +457,8 @@ export default function AppointmentBook() {
 
             {/* ── PAST APPOINTMENTS ── */}
             {myAppointments.length > 0 && (
-                <motion.div variants={fadeInUp} initial="initial" animate="animate" transition={{ delay: 0.2 }} className="glass-panel p-10 rounded-[40px] mt-10 border-white/5">
-                    <h2 className="text-[10px] font-black uppercase tracking-[0.3em] text-white/40 mb-8 flex items-center gap-3">
+                <motion.div variants={fadeInUp} initial="initial" animate="animate" transition={{ delay: 0.2 }} className="glass-panel p-10 rounded-[40px] mt-10 border-[var(--glass-border)] shadow-lg">
+                    <h2 className="text-[10px] font-black uppercase tracking-[0.3em] text-[var(--text-muted)] opacity-50 mb-8 flex items-center gap-3">
                         <Calendar className="w-4 h-4 text-cyan-500" /> Your Appointments
                     </h2>
                     {aptsLoading ? (
@@ -469,20 +468,20 @@ export default function AppointmentBook() {
                     ) : (
                         <div className="space-y-4">
                             {myAppointments.map(apt => (
-                                <div key={apt._id} className="flex flex-col md:flex-row md:items-center justify-between p-6 rounded-[24px] bg-[#030712] border border-white/5 hover:border-white/10 transition-all group">
+                                <div key={apt._id} className="flex flex-col md:flex-row md:items-center justify-between p-6 rounded-[24px] bg-[var(--input-bg)] border border-[var(--input-border)] hover:border-[var(--accent-primary)]/30 transition-all group shadow-sm">
                                     <div className="flex items-center gap-5 mb-4 md:mb-0">
                                         <div className="w-12 h-12 rounded-2xl bg-cyan-500/10 border border-cyan-500/20 flex items-center justify-center">
                                             <FlaskConical className="w-5 h-5 text-cyan-500" />
                                         </div>
                                         <div>
-                                            <p className="text-sm font-bold text-white mb-0.5">
-                                                {apt.labName} <span className="text-white/30 mx-1">/</span>
-                                                <span className="text-cyan-400">{apt.test}</span>
+                                            <p className="text-sm font-bold text-[var(--text-main)] mb-0.5">
+                                                {apt.labName} <span className="text-[var(--text-muted)] opacity-20 mx-1">/</span>
+                                                <span className="text-cyan-500">{apt.test}</span>
                                             </p>
-                                            <p className="text-[10px] text-white/30 font-bold uppercase tracking-widest">
+                                            <p className="text-[10px] text-[var(--text-muted)] opacity-60 font-bold uppercase tracking-widest">
                                                 {apt.city} · {apt.date} · {apt.slot}
                                             </p>
-                                            <p className="text-[9px] font-mono text-white/20 mt-0.5">{apt.bid}</p>
+                                            <p className="text-[9px] font-mono text-[var(--text-muted)] opacity-40 mt-0.5">{apt.bid}</p>
                                         </div>
                                     </div>
                                     <div className="flex items-center gap-3">

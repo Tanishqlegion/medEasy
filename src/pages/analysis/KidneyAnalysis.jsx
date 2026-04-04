@@ -22,6 +22,7 @@ ${JSON.stringify(modelOutput, null, 2)}
 Classification: ${modelOutput.prediction} | Risk: ${modelOutput.risk_level} | Confidence: ${(modelOutput.confidence * 100).toFixed(1)}%
 
 Based STRICTLY on this classification, provide a clinical analysis as strict JSON (no markdown):
+CRITICAL RULE: If the confidence is < 60.0% (${(modelOutput.confidence * 100).toFixed(1) || 0}%), you MUST state "Please consider consulting a doctor immediately due to low AI certainty" in the summary, and set the overall_verdict to "CONSULT DOCTOR".
 {
   "summary": "2-sentence clinical interpretation consistent with classification: ${modelOutput.prediction}",
   "health_score": <number 0-100, low if Stone detected>,
@@ -165,14 +166,14 @@ export default function KidneyAnalysis({ report, token, onComplete }) {
         <Droplets className="w-8 h-8 text-amber-500 absolute inset-0 m-auto" />
       </div>
       <div className="text-center">
-        <p className="text-lg font-black uppercase tracking-tighter text-white mb-2">Kidney Stone Analysis</p>
+        <p className="text-lg font-black uppercase tracking-tighter text-[var(--text-main)] mb-2">Kidney Stone Analysis</p>
         <p className="text-[10px] font-black uppercase tracking-[0.3em] text-amber-400 animate-pulse">{step}</p>
         {modelOutput && (
           <div className={cn('mt-4 px-6 py-3 rounded-2xl border', modelOutput.prediction === 'Normal' ? 'bg-emerald-500/10 border-emerald-500/20' : 'bg-rose-500/10 border-rose-500/20')}>
             <p className={cn('text-[10px] font-black uppercase tracking-widest', modelOutput.prediction === 'Normal' ? 'text-emerald-400' : 'text-rose-400')}>
               {modelOutput.prediction}
             </p>
-            <p className="text-[9px] text-white/40 uppercase mt-1">Confidence: {(modelOutput.confidence * 100).toFixed(1)}%</p>
+            <p className="text-[9px] text-[var(--text-muted)] uppercase mt-1">Confidence: {(modelOutput.confidence * 100).toFixed(1)}%</p>
           </div>
         )}
       </div>
@@ -203,8 +204,9 @@ export default function KidneyAnalysis({ report, token, onComplete }) {
       <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="space-y-6">
 
         {/* Hero */}
-        <div className={cn('p-8 rounded-[32px] border flex items-center gap-6',
-          isStone ? 'bg-rose-500/5 border-rose-500/20' : 'bg-emerald-500/5 border-emerald-500/20')}>
+        <div className={cn('p-8 rounded-[32px] border flex items-center gap-6 backdrop-blur-3xl shadow-xl relative overflow-hidden',
+          isStone ? 'bg-[var(--glass-bg)] border-rose-500/20' : 'bg-[var(--glass-bg)] border-emerald-500/20')}>
+          <div className="absolute inset-0 bg-current opacity-5 pointer-events-none" />
           <div className="w-16 h-16 rounded-[20px] flex items-center justify-center font-black text-2xl text-white shadow-xl shrink-0"
                style={{ background: `linear-gradient(135deg, ${accentColor}, ${accentColor}88)` }}>
             {analysis.health_score}
@@ -221,60 +223,60 @@ export default function KidneyAnalysis({ report, token, onComplete }) {
                 </span>
               )}
               {isStone && (
-                <span className="px-3 py-1.5 rounded-xl text-[9px] font-black uppercase tracking-widest border border-rose-500/30 bg-rose-600/90 text-white animate-pulse">
+                <span className="px-3 py-1.5 rounded-xl text-[9px] font-black uppercase tracking-widest border border-rose-500/30 bg-rose-600/90 text-white animate-pulse shadow-lg shadow-rose-500/20">
                   ⚠ KIDNEY STONE DETECTED
                 </span>
               )}
             </div>
-            <p className="text-sm font-bold text-white leading-snug">{analysis.summary}</p>
+            <p className="text-sm font-bold text-[var(--text-main)] leading-snug">{analysis.summary}</p>
           </div>
         </div>
 
         {/* Model + Charts */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           {modelOutput && (
-            <div className="glass-panel p-6 rounded-[28px] border-white/5 space-y-4">
+            <div className="bg-[var(--glass-bg)] p-6 rounded-[28px] border border-[var(--glass-border)] backdrop-blur-3xl shadow-lg space-y-4">
               <h3 className="text-[10px] font-black uppercase tracking-[0.3em] text-amber-400 flex items-center gap-2">
                 <Activity className="w-4 h-4" /> Model Output
               </h3>
-              <div className="p-4 rounded-[16px] border"
-                   style={{ backgroundColor: `${accentColor}08`, borderColor: `${accentColor}30` }}>
-                <p className="text-[9px] font-black uppercase text-white/30 mb-1">Classification</p>
+              <div className="p-4 rounded-[16px] border bg-[var(--input-bg)]"
+                   style={{ borderColor: `${accentColor}30` }}>
+                <p className="text-[9px] font-black uppercase text-[var(--text-muted)] mb-1">Classification</p>
                 <p className="text-base font-black uppercase" style={{ color: accentColor }}>{modelOutput.prediction}</p>
               </div>
               {modelOutput.all_confidences && Object.keys(modelOutput.all_confidences).length > 0 && (
                 <div className="space-y-2">
                   {Object.entries(modelOutput.all_confidences).map(([cls, pct]) => (
                     <div key={cls} className="flex items-center gap-2">
-                      <p className="text-[9px] font-black text-white/40 w-16 uppercase shrink-0">{cls}</p>
-                      <div className="flex-grow h-1.5 rounded-full bg-white/5">
-                        <div className="h-full rounded-full transition-all" style={{ width: `${pct}%`, backgroundColor: accentColor }} />
+                      <p className="text-[9px] font-black text-[var(--text-muted)] w-16 uppercase shrink-0">{cls}</p>
+                      <div className="flex-grow h-1.5 rounded-full bg-[var(--bg-main)]/50">
+                        <div className="h-full rounded-full transition-all shadow-[0_0_8px_rgba(0,0,0,0.1)]" style={{ width: `${pct}%`, backgroundColor: accentColor }} />
                       </div>
-                      <p className="text-[9px] text-white/40 font-black w-10 text-right">{pct}%</p>
+                      <p className="text-[9px] text-[var(--text-muted)] font-black w-10 text-right">{pct}%</p>
                     </div>
                   ))}
                 </div>
               )}
-              <p className="text-[9px] text-white/40 leading-relaxed">{modelOutput.reasoning}</p>
+              <p className="text-[9px] text-[var(--text-muted)] leading-relaxed">{modelOutput.reasoning}</p>
             </div>
           )}
 
-          <div className="glass-panel p-6 rounded-[28px] border-white/5">
+          <div className="bg-[var(--glass-bg)] p-6 rounded-[28px] border border-[var(--glass-border)] backdrop-blur-3xl shadow-lg">
             <h3 className="text-[10px] font-black uppercase tracking-[0.3em] text-amber-400 mb-4 flex items-center gap-2">
               <Shield className="w-4 h-4" /> Risk Profile
             </h3>
             <div className="h-[180px]">
               <ResponsiveContainer>
                 <RadarChart data={riskData}>
-                  <PolarGrid stroke="rgba(255,255,255,0.05)" />
-                  <PolarAngleAxis dataKey="name" tick={{ fill: 'rgba(255,255,255,0.4)', fontSize: 9, fontWeight: 900 }} />
+                  <PolarGrid stroke="var(--glass-border)" />
+                  <PolarAngleAxis dataKey="name" tick={{ fill: 'var(--text-muted)', fontSize: 9, fontWeight: 900 }} />
                   <Radar dataKey="value" stroke={accentColor} fill={accentColor} fillOpacity={0.2} />
                 </RadarChart>
               </ResponsiveContainer>
             </div>
           </div>
 
-          <div className="glass-panel p-6 rounded-[28px] border-white/5 flex flex-col">
+          <div className="glass-panel p-6 rounded-[28px] border-[var(--border-subtle)] flex flex-col">
             <h3 className="text-[10px] font-black uppercase tracking-[0.3em] text-blue-400 mb-4 flex items-center gap-2">
               <Droplets className="w-4 h-4" /> Hydration Target
             </h3>
@@ -291,26 +293,26 @@ export default function KidneyAnalysis({ report, token, onComplete }) {
                 </ResponsiveContainer>
               </div>
               <p className="text-2xl font-black text-blue-400">{analysis.hydration_target_liters || 3.0}L</p>
-              <p className="text-[9px] font-black text-white/30 uppercase tracking-widest">Daily target</p>
+              <p className="text-[9px] font-black text-[var(--text-muted)] uppercase tracking-widest">Daily target</p>
             </div>
           </div>
         </div>
 
         {/* Parameters */}
         {analysis.parameters?.length > 0 && (
-          <div className="glass-panel p-8 rounded-[32px] border-white/5">
+          <div className="bg-[var(--glass-bg)] p-8 rounded-[32px] border border-[var(--glass-border)] backdrop-blur-3xl shadow-xl">
             <h3 className="text-[10px] font-black uppercase tracking-[0.3em] text-amber-400 mb-6 flex items-center gap-2">
               <TrendingUp className="w-4 h-4" /> Nephrological Parameters
             </h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
               {analysis.parameters.map((p, i) => (
-                <div key={i} className="p-4 rounded-[16px] bg-white/[0.03] border border-white/5 flex justify-between items-center">
+                <div key={i} className="p-4 rounded-[16px] bg-[var(--input-bg)] border border-[var(--glass-border)] flex justify-between items-center group hover:bg-[var(--bg-main)]/50 transition-all">
                   <div>
-                    <p className="text-[10px] font-black text-white uppercase">{p.name}</p>
+                    <p className="text-[10px] font-black text-[var(--text-main)] uppercase">{p.name}</p>
                     <p className="text-xs font-black text-amber-400">{p.value}</p>
-                    {p.interpretation && <p className="text-[9px] text-white/30 mt-0.5">{p.interpretation}</p>}
+                    {p.interpretation && <p className="text-[9px] text-[var(--text-muted)] mt-0.5 group-hover:text-[var(--text-main)] transition-colors">{p.interpretation}</p>}
                   </div>
-                  <span className={cn('text-[8px] font-black px-2 py-0.5 rounded-full uppercase shrink-0 ml-3',
+                  <span className={cn('text-[8px] font-black px-2 py-0.5 rounded-full uppercase shrink-0 ml-3 shadow-sm',
                     p.status === 'Normal' ? 'bg-emerald-500/20 text-emerald-400' :
                     p.status === 'Critical' ? 'bg-rose-500/20 text-rose-400' : 'bg-amber-500/20 text-amber-400'
                   )}>{p.status}</span>
@@ -323,7 +325,7 @@ export default function KidneyAnalysis({ report, token, onComplete }) {
         {/* Threats + Diet */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {analysis.threats?.length > 0 && (
-            <div className="glass-panel p-6 rounded-[28px] border-white/5">
+            <div className="glass-panel p-6 rounded-[28px] border-[var(--border-subtle)]">
               <h3 className="text-[10px] font-black uppercase tracking-[0.3em] text-rose-400 mb-4 flex items-center gap-2">
                 <AlertTriangle className="w-4 h-4" /> Clinical Alerts
               </h3>
@@ -331,14 +333,14 @@ export default function KidneyAnalysis({ report, token, onComplete }) {
                 {analysis.threats.map((t, i) => (
                   <div key={i} className="p-3 rounded-[14px] bg-rose-500/5 border border-rose-500/10">
                     <p className="text-[9px] font-black text-rose-400 uppercase mb-1">{t.level} — {t.condition}</p>
-                    <p className="text-[10px] text-white/40">{t.description}</p>
+                    <p className="text-[10px] text-[var(--text-muted)]">{t.description}</p>
                   </div>
                 ))}
               </div>
             </div>
           )}
           {analysis.diet?.length > 0 && (
-            <div className="glass-panel p-6 rounded-[28px] border-white/5">
+            <div className="glass-panel p-6 rounded-[28px] border-[var(--border-subtle)]">
               <h3 className="text-[10px] font-black uppercase tracking-[0.3em] text-emerald-400 mb-4 flex items-center gap-2">
                 <Apple className="w-4 h-4" /> Kidney Diet
               </h3>
@@ -347,8 +349,8 @@ export default function KidneyAnalysis({ report, token, onComplete }) {
                   <div key={i} className="flex gap-3 p-3 rounded-[14px] bg-emerald-500/5 border border-emerald-500/10">
                     <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0 mt-0.5" />
                     <div>
-                      <p className="text-[10px] font-black text-white uppercase">{d.recommendation}</p>
-                      <p className="text-[9px] text-white/30 mt-0.5">{d.reason}</p>
+                      <p className="text-[10px] font-black text-[var(--text-main)] uppercase">{d.recommendation}</p>
+                      <p className="text-[9px] text-[var(--text-muted)] mt-0.5">{d.reason}</p>
                     </div>
                   </div>
                 ))}
@@ -359,17 +361,17 @@ export default function KidneyAnalysis({ report, token, onComplete }) {
 
         {/* Follow-up */}
         {analysis.follow_up && (
-          <div className="glass-panel p-6 rounded-[28px] border-amber-500/10 bg-amber-500/[0.02]">
+          <div className="glass-panel p-6 rounded-[28px] border-[var(--border-subtle)] bg-[var(--bg-main)]/10">
             <h3 className="text-[10px] font-black uppercase tracking-[0.3em] text-amber-400 mb-3 flex items-center gap-2">
               <Clock className="w-4 h-4" /> Follow-Up Protocol
             </h3>
-            <p className="text-sm text-white/60">{analysis.follow_up}</p>
+            <p className="text-sm text-[var(--text-muted)]">{analysis.follow_up}</p>
           </div>
         )}
 
-        <div className="p-6 rounded-[24px] border border-white/5 flex items-center gap-4 opacity-40">
+        <div className="p-6 rounded-[24px] border border-[var(--border-subtle)] flex items-center gap-4 opacity-40">
           <ShieldCheck className="w-6 h-6 text-amber-500 shrink-0" />
-          <p className="text-[9px] font-bold uppercase tracking-wider text-white/60 leading-relaxed">
+          <p className="text-[9px] font-bold uppercase tracking-wider text-[var(--text-muted)] leading-relaxed">
             Powered by kidney_final_detection_and_classification.pkl (Keras AlexNet, 512×512) → Neural clinical synthesis. For clinical use, consult a nephrologist.
           </p>
         </div>
