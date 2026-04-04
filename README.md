@@ -1,6 +1,6 @@
-# Doctor-AI: Advanced Clinical AI Diagnostics Platform
+# MedEz: Advanced Clinical AI Diagnostics Platform
 
-**Doctor-AI** is a premium, high-fidelity healthcare ecosystem designed for rapid medical image analysis, clinical reporting, and patient history retrieval through advanced RAG-integrated intelligence.
+**MedEz** is a premium, high-fidelity healthcare ecosystem designed for rapid medical image analysis, clinical reporting, and patient history retrieval through advanced RAG-integrated intelligence.
 
 ---
 
@@ -37,7 +37,7 @@ Follow these steps to initialize the core diagnostic array locally:
 #### 1. Remote Initialization
 ```bash
 git clone https://github.com/Tanishqlegion/medEasy.git
-cd doctor-ai
+cd medEasy
 ```
 
 #### 2. Dependency Management
