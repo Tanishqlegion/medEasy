@@ -7,10 +7,18 @@ import { cn } from '../components/Button';
 import { useAuth } from '../context/AuthContext';
 import { PieChart, Pie, Cell, ResponsiveContainer, RadarChart, PolarGrid, PolarAngleAxis, Radar, BarChart, Bar, XAxis, YAxis, Tooltip, CartesianGrid } from 'recharts';
 import * as pdfjs from 'pdfjs-dist';
-import pdfWorker from 'pdfjs-dist/build/pdf.worker.mjs?url';
 import Tesseract from 'tesseract.js';
 
-pdfjs.GlobalWorkerOptions.workerSrc = pdfWorker;
+pdfjs.GlobalWorkerOptions.workerSrc = `https://unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.mjs`;
+
+const FLASK_URL = 'http://127.0.0.1:5000';
+
+// Map ReportAnalysisPatient mode → Flask endpoint
+const FLASK_ENDPOINT = {
+  ecg: '/analyze-ecg',
+  ct:  '/analyze-lung',
+  mri: '/analyze-brain',
+};
 
 const fadeInUp = {
   initial: { opacity: 0, y: 20 },
@@ -121,95 +129,127 @@ export default function ReportAnalysisPatient() {
   };
 
   const analyze = async () => {
-    if (!file) { setError("Diagnostic source missing."); return; }
+    if (!file) { setError('Diagnostic source missing.'); return; }
     setAnalyzing(true); setError(null);
     setPrivacyStep('Initializing Neural Privacy Tunnel...');
 
     try {
-      let canvas = document.createElement('canvas');
-      let ctx = canvas.getContext('2d');
-      let finalImgForAI = '';
-      let extractedText = '';
+      const canvas = document.createElement('canvas');
+      const ctx    = canvas.getContext('2d');
 
-      // 1. EXTRACTION
+      // 1. RENDER FILE TO CANVAS (white background to prevent JPEG black artifacts)
       if (file.type === 'application/pdf') {
         setPrivacyStep('Decrypting PDF Layers...');
-        const ab = await file.arrayBuffer();
+        const ab  = await file.arrayBuffer();
         const pdf = await pdfjs.getDocument({ data: new Uint8Array(ab) }).promise;
-        const pg = await pdf.getPage(1);
-        const vp = pg.getViewport({ scale: 2 });
+        const pg  = await pdf.getPage(1);
+        const vp  = pg.getViewport({ scale: 2 });
         canvas.height = vp.height; canvas.width = vp.width;
+        ctx.fillStyle = '#ffffff';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
         await pg.render({ canvasContext: ctx, viewport: vp }).promise;
       } else {
         setPrivacyStep('Analyzing Diagnostic Matrix...');
         const img = await new Promise(r => {
           const fr = new FileReader();
-          fr.onloadend = () => {
-            const i = new Image();
-            i.onload = () => r(i);
-            i.src = fr.result;
-          };
+          fr.onloadend = () => { const i = new Image(); i.onload = () => r(i); i.src = fr.result; };
           fr.readAsDataURL(file);
         });
         canvas.width = img.width; canvas.height = img.height;
+        ctx.fillStyle = '#ffffff';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
         ctx.drawImage(img, 0, 0);
       }
 
-      // 2. PRIVACY ENFORCEMENT & LOCAL LOGIC
-      setPrivacyStep('Running Local OCR & PII Scrubber...');
-      const ocrResult = await Tesseract.recognize(canvas, 'eng');
-      extractedText = scrubPII(ocrResult.data.text, user.name);
+      // 2. SPECIALIST MODE — route through Flask neural model first
+      if (FLASK_ENDPOINT[mode]) {
+        setPrivacyStep(`Running ${mode.toUpperCase()} neural model...`);
+        const imageUrl = canvas.toDataURL('image/jpeg', 0.9);
+        const blob     = await fetch(imageUrl).then(r => r.blob());
+        const fileObj  = new File([blob], file.name || `${mode}.jpg`, { type: 'image/jpeg' });
+        const formData = new FormData();
+        formData.append('image', fileObj);
 
-      // Local Rule check for immediate feedback
-      const local = checkLocalRanges(extractedText);
-      setLocalFindings(local);
+        const flaskRes = await fetch(`${FLASK_URL}${FLASK_ENDPOINT[mode]}`, { method: 'POST', body: formData });
+        if (!flaskRes.ok) throw new Error(`Model error: ${flaskRes.status}`);
+        const flaskData = await flaskRes.json();
+        if (flaskData.error) throw new Error(flaskData.error);
+
+        // 3. Groq to produce structured clinical JSON using model output as source of truth
+        setPrivacyStep('Generating clinical report from model output...');
+        const specialistPrompt = `You are an expert diagnostic AI. A specialized neural model analyzed this ${mode} scan and returned:
+${JSON.stringify(flaskData, null, 2)}
+
+The model classification "${flaskData.prediction}" is GROUND TRUTH. Build a clinical report CONSISTENT with this classification.
+Output strict JSON only:
+{
+  "summary": "2-sentence clinical interpretation consistent with classification: ${flaskData.prediction || ''}",
+  "health_score": <0-100>,
+  "parameters": [{"name":"string","value":"string","status":"Normal|Abnormal|Critical"}],
+  "risk_assessment": {"cardiovascular":{"level":"Low|Moderate|High"},"metabolic":{"level":"Low|Moderate|High"},"organ_health":{"level":"Low|Moderate|High"}},
+  "threats": [{"level":"LOW|MODERATE|HIGH|CRITICAL","condition":"string","description":"string"}],
+  "diet": [{"recommendation":"string","category":"string"}],
+  "routine": [{"time":"string","activity":"string"}]
+}`;
+
+        const groqRes = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+          method: 'POST',
+          headers: { Authorization: `Bearer ${import.meta.env.VITE_GROQ_API_KEY}`, 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            model: 'meta-llama/llama-4-scout-17b-16e-instruct',
+            temperature: 0.1,
+            response_format: { type: 'json_object' },
+            messages: [{ role: 'user', content: specialistPrompt }]
+          })
+        });
+        const groqData = await groqRes.json();
+        if (groqData.error) throw new Error(groqData.error.message);
+        const parsed = JSON.parse(groqData.choices[0].message.content);
+        setResult({ ...parsed, _model: flaskData });
+        return;
+      }
+
+      // 4. GENERAL REPORT MODE (blood test, lab report) — Groq vision
+      setPrivacyStep('Running Local OCR & PII Scrubber...');
+      const ocrResult   = await Tesseract.recognize(canvas, 'eng');
+      const extractedText = scrubPII(ocrResult.data.text, user?.name);
+      setLocalFindings(checkLocalRanges(extractedText));
 
       setPrivacyStep('Masking Patient Identifiers...');
-      finalImgForAI = redactImageHeader(canvas);
+      const finalImgForAI = redactImageHeader(canvas);
 
-      // 3. SECURE API TRANSMISSION
       setPrivacyStep('AI Diagnostic Synthesis...');
-      const base64 = finalImgForAI.split(',')[1];
-      
       const prompt = `System: Expert Medical Diagnostic Engine. Target: [ANONYMIZED SUBJECT].
-      
-      TASK: Analyze the provided document for ${mode}. 
-      OUTPUT STRICT JSON with:
-      - summary (string)
-      - health_score (number 0-100)
-      - parameters (array: {name, value, status['Normal'|'Abnormal']})
-      - risk_assessment (object: {cardiovascular: {level}, metabolic: {level}, organ_health: {level}})
-      - threats (array: {level, condition, description})
-      - diet (array: {recommendation, category})
-      - routine (array: {time, activity})
-      
-      No PII allowed in response.`;
+TASK: Analyze the provided lab report.
+OUTPUT STRICT JSON:
+- summary (string)
+- health_score (number 0-100)
+- parameters (array: {name, value, status['Normal'|'Abnormal']})
+- risk_assessment ({cardiovascular:{level},metabolic:{level},organ_health:{level}})
+- threats (array: {level, condition, description})
+- diet (array: {recommendation, category})
+- routine (array: {time, activity})
+No PII allowed.`;
 
-      const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
-        method: "POST",
-        headers: { "Authorization": `Bearer ${import.meta.env.VITE_GROQ_API_KEY}`, "Content-Type": "application/json" },
+      const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${import.meta.env.VITE_GROQ_API_KEY}`, 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          model: "meta-llama/llama-4-scout-17b-16e-instruct",
+          model: 'meta-llama/llama-4-scout-17b-16e-instruct',
           temperature: 0.1,
-          messages: [{ 
-            role: "user", 
-            content: [
-              { type: "text", text: prompt }, 
-              { type: "image_url", image_url: { url: finalImgForAI } } 
-            ] 
-          }],
-          response_format: { type: "json_object" }
+          messages: [{ role: 'user', content: [{ type: 'text', text: prompt }, { type: 'image_url', image_url: { url: finalImgForAI } }] }],
+          response_format: { type: 'json_object' }
         })
       });
 
       const data = await response.json();
-      if (data.error) throw new Error(data.error.message || "Groq Context Error");
-      if (!data.choices?.[0]) throw new Error("Inference failed.");
+      if (data.error) throw new Error(data.error.message || 'Neural AI Error');
+      if (!data.choices?.[0]) throw new Error('Inference failed.');
       const parsedResult = JSON.parse(data.choices[0].message.content);
-      if (parsedResult.error === 'wrong_report') { setError(parsedResult.message); }
-      else { setResult(parsedResult); }
+      if (parsedResult.error === 'wrong_report') setError(parsedResult.message);
+      else setResult(parsedResult);
 
-    } catch (err) { setError("Neural Engine Error: " + err.message); }
+    } catch (err) { setError('Neural Engine Error: ' + err.message); }
     finally { setAnalyzing(false); setPrivacyStep(''); }
   };
 

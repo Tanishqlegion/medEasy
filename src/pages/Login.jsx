@@ -10,7 +10,7 @@ export default function Login() {
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  const [agreed, setAgreed] = useState(false);
+    const [agreed, setAgreed] = useState(false);
   const { login } = useAuth();
   const navigate = useNavigate();
 
@@ -20,7 +20,7 @@ export default function Login() {
     setError('');
 
     try {
-      const response = await fetch("http://127.0.0.1:5002/api/auth/login", {
+      const response = await fetch("http://localhost:5002/api/auth/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, password })
@@ -30,11 +30,16 @@ export default function Login() {
 
       if (!response.ok) throw new Error(data.msg || "Login failed");
 
+      if (data.user.role === 'lab') {
+        throw new Error("Invalid access: Lab staff must use the dedicated Lab Portal to login.");
+      }
+      
       login(data.user, data.token);
-      navigate(data.user.role === 'doctor' ? '/hospital-dashboard' : '/patient-dashboard');
+      if (data.user.role === 'doctor') navigate('/hospital-dashboard');
+      else navigate('/patient-dashboard');
     } catch (err) {
       if (err.message.includes('Failed to fetch')) {
-        setError("Network Error: Backend unreachable (Port 5002)");
+        setError("Server busy");
       } else {
         setError(err.message);
       }
@@ -55,103 +60,98 @@ export default function Login() {
         transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
         className="w-full max-w-md glass-panel p-6 md:px-8 rounded-[30px] relative z-10 border-white/20 shadow-[-10px_-10px_30px_rgba(255,255,255,0.1),10px_10px_30px_rgba(0,0,0,0.1)]"
       >
-        <div className="text-center mb-4">
-          <motion.div
-            initial={{ rotate: -10, scale: 0.8 }}
-            animate={{ rotate: 0, scale: 1 }}
-            transition={{ type: "spring", damping: 12 }}
-            className="w-14 h-14 bg-gradient-to-br from-cyan-400 to-blue-600 rounded-2xl flex items-center justify-center mx-auto mb-3 shadow-2xl shadow-cyan-500/30 ring-8 ring-cyan-500/5"
-          >
-            <Activity className="w-6 h-6 text-white" />
-          </motion.div>
-
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-cyan-500/10 text-cyan-500 text-[10px] font-black uppercase tracking-[0.2em] mb-2">
-            <Sparkles className="w-3.5 h-3.5" /> Secure Authentication
-          </div>
-
-          <h1 className="text-3xl font-black tracking-tight mb-1 text-[var(--text-main)]">Welcome Back</h1>
-          <p className="text-sm text-[var(--text-muted)] font-medium">Access your personalized health terminal</p>
-        </div>
-
-        {error && (
-          <motion.div
-            initial={{ opacity: 0, x: -10 }}
-            animate={{ opacity: 1, x: 0 }}
-            className="bg-rose-500/10 border border-rose-500/20 p-3 rounded-xl text-rose-500 text-sm font-bold mb-4 text-center"
-          >
-            {error}
-          </motion.div>
-        )}
-
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="space-y-1.5">
-            <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[var(--text-muted)] ml-2">Clinical Identifier</label>
-            <div className="relative group">
-              <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--text-muted)] group-focus-within:text-cyan-500 transition-colors duration-300" />
-              <input
-                type="email"
-                required
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                className="w-full bg-white/5 border border-white/10 rounded-2xl py-3 pl-11 pr-4 outline-none focus:border-cyan-500/50 focus:ring-4 focus:ring-cyan-500/5 transition-all text-sm font-bold placeholder:text-[var(--text-muted)]/40"
-                placeholder="email@clinical.org"
-              />
+        <div className="space-y-6">
+          <div className="text-center space-y-2">
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-cyan-500/10 border border-cyan-500/20 text-cyan-500 text-[10px] font-black uppercase tracking-widest mb-2">
+              <Activity className="w-3 h-3" /> Secure Node Access
             </div>
+            <h1 className="text-3xl font-black tracking-tighter uppercase">Initialize Logic</h1>
+            <p className="text-[11px] text-[var(--text-muted)] font-black uppercase tracking-[0.2em]">Enter clinical credentials to sync profile</p>
           </div>
 
-          <div className="space-y-1.5">
-            <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[var(--text-muted)] ml-2">Security Key</label>
-            <div className="relative group">
-              <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--text-muted)] group-focus-within:text-cyan-500 transition-colors duration-300" />
-              <input
-                type="password"
-                required
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                className="w-full bg-white/5 border border-white/10 rounded-2xl py-3 pl-11 pr-4 outline-none focus:border-cyan-500/50 focus:ring-4 focus:ring-cyan-500/5 transition-all text-sm font-bold"
-                placeholder="••••••••"
-              />
+
+
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div className="space-y-4">
+              <div className="relative group">
+                <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-white/20 group-focus-within:text-cyan-500 transition-colors" />
+                <input
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="Clinical ID (Email)"
+                  className="w-full bg-white/5 border border-white/10 rounded-2xl py-4 pl-12 pr-4 outline-none focus:border-cyan-500/50 focus:bg-white/10 text-xs font-black uppercase tracking-widest text-white transition-all placeholder:text-white/20"
+                  required
+                />
+              </div>
+
+              <div className="relative group">
+                <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-white/20 group-focus-within:text-cyan-500 transition-colors" />
+                <input
+                  type="password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder="Bio-Key (Password)"
+                  className="w-full bg-white/5 border border-white/10 rounded-2xl py-4 pl-12 pr-4 outline-none focus:border-cyan-500/50 focus:bg-white/10 text-xs font-black uppercase tracking-widest text-white transition-all placeholder:text-white/20"
+                  required
+                />
+              </div>
             </div>
-          </div>
 
-          <div className="flex items-center gap-2 px-2 pt-1">
-            <input
-              type="checkbox"
-              id="terms"
-              checked={agreed}
-              onChange={(e) => setAgreed(e.target.checked)}
-              className="w-4 h-4 rounded-md bg-white/5 border border-white/10 text-cyan-500 focus:ring-offset-0 focus:ring-cyan-500/50 cursor-pointer transition-all"
-            />
-            <label htmlFor="terms" className="text-[10px] font-bold text-[var(--text-muted)] cursor-pointer select-none">
-              I agree to the <span className="text-cyan-400">Terms of Service</span> & <span className="text-cyan-400">Privacy Protocol</span>
-            </label>
-          </div>
+            <div className="flex items-center justify-between px-1">
+              <label className="flex items-center gap-2 cursor-pointer group">
+                <div className="relative flex items-center">
+                  <input
+                    type="checkbox"
+                    checked={agreed}
+                    onChange={(e) => setAgreed(e.target.checked)}
+                    className="sr-only"
+                  />
+                  <div className={`w-4 h-4 rounded border ${agreed ? 'bg-cyan-600 border-cyan-600' : 'border-white/20 bg-white/5'} transition-all flex items-center justify-center`}>
+                    {agreed && <ShieldCheck className="w-3 h-3 text-white" />}
+                  </div>
+                </div>
+                <span className="text-[10px] font-black uppercase tracking-widest text-[var(--text-muted)] group-hover:text-white transition-colors">Remember Sync</span>
+              </label>
+              <Link to="/signup" className="text-[10px] font-black uppercase tracking-widest text-cyan-500 hover:text-cyan-400 transition-colors">Reset ID</Link>
+            </div>
 
-          <Button
-            type="submit"
-            disabled={loading || !agreed}
-            className="w-full h-12 rounded-xl button-premium transition-all flex items-center justify-center gap-2 font-black uppercase tracking-[0.2em] text-[11px] mt-4 shadow-xl shadow-cyan-500/20 disabled:opacity-30 disabled:cursor-not-allowed"
-          >
-            {loading ? (
-              <Loader2 className="w-5 h-5 animate-spin text-white" />
-            ) : (
-              <>Initiate Login <ArrowRight className="w-4 h-4" /></>
+            {error && (
+              <motion.div initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} className="p-4 rounded-xl bg-red-500/10 border border-red-500/20 flex gap-3">
+                <div className="w-4 h-4 rounded-full bg-red-500 flex-shrink-0 mt-0.5" />
+                <p className="text-[10px] font-black uppercase tracking-wider text-red-500 leading-relaxed">{error}</p>
+              </motion.div>
             )}
-          </Button>
-        </form>
 
-        <div className="mt-8 text-center pt-6 border-t border-white/5 space-y-4">
-          <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-[var(--text-muted)]">
-            New to the network?{' '}
-            <Link to="/signup" className="text-cyan-500 hover:text-cyan-400 transition-colors ml-1">Initialize Account</Link>
+            <Button
+              type="submit"
+              disabled={loading || password.length < 6}
+              className="w-full h-14 rounded-2xl bg-cyan-600 font-black uppercase tracking-[0.2em] text-[10px] button-premium shadow-xl shadow-cyan-900/40 relative overflow-hidden group"
+            >
+              <span className="relative z-10 flex items-center justify-center gap-2">
+                {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <>Sync Protocol <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" /></>}
+              </span>
+              <div className="absolute inset-0 bg-white/10 translate-y-full group-hover:translate-y-0 transition-transform" />
+            </Button>
+            {password.length > 0 && password.length < 6 && (
+              <p className="text-[9px] text-red-500 font-black uppercase tracking-widest text-center mt-2 animate-pulse">At least 6 characters required</p>
+            )}
+          </form>
+
+          <p className="text-center text-[10px] font-black uppercase tracking-widest text-[var(--text-muted)] pt-2">
+            New Entity? <Link to="/signup" className="text-cyan-500 hover:text-cyan-400">Initialize Profile</Link>
           </p>
-          <div className="text-[10px] uppercase font-black tracking-widest text-[var(--text-muted)] opacity-50 flex items-center justify-center gap-2">
-            <ShieldCheck className="w-3 h-3" /> E2E Encrypted Protocol
+
+          <div className="mt-4 pt-4 border-t border-white/5 text-center">
+             <Link to="/lab-login" className="text-[10px] font-black uppercase tracking-[0.2em] text-emerald-500 hover:text-emerald-400 transition-colors">
+               Facility Staff? Access Lab Terminal
+             </Link>
           </div>
 
-          <Link to="/lab-login" className="mt-2 inline-flex items-center justify-center gap-2 px-4 py-2 rounded-xl bg-emerald-500/5 hover:bg-emerald-500/10 border border-emerald-500/10 text-[10px] font-black uppercase tracking-widest text-emerald-500 transition-all w-full mt-4">
-            <Activity className="w-3 h-3" /> Diagnostic Lab Access
-          </Link>
+          <div className="flex items-center gap-3 pt-4 opacity-30 justify-center">
+            <Sparkles className="w-3 h-3 text-cyan-500" />
+            <p className="text-[9px] font-black uppercase tracking-[0.4em]">Stitch Medical Security Standard v4.0.2</p>
+          </div>
         </div>
       </motion.div>
     </div>

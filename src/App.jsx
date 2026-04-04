@@ -5,17 +5,16 @@ import Landing from './pages/Landing';
 import Login from './pages/Login';
 import Signup from './pages/Signup';
 import PatientDashboard from './pages/PatientDashboard';
-import HospitalDashboard from './pages/HospitalDashboard';
 import ReportAnalysisPatient from './pages/ReportAnalysisPatient';
-import ReportAnalysisDoctor from './pages/ReportAnalysisDoctor';
 import EcgAnalysis from './pages/EcgAnalysis';
 import CancerAnalysisPatient from './pages/CancerAnalysisPatient';
-import CancerAnalysisDoctor from './pages/CancerAnalysisDoctor';
 import StitchPremiumUI from './pages/StitchPremiumUI';
 import AppointmentBook from './pages/AppointmentBook';
 import LabPortal from './pages/LabPortal';
 import LabLogin from './pages/LabLogin';
 import LabSignup from './pages/LabSignup';
+import LabReportView from './pages/LabReportView';
+import CompareReports from './pages/CompareReports';
 import DNABackground from './components/DNABackground';
 import { ThemeProvider } from './context/ThemeContext';
 import { AuthProvider } from './context/AuthContext';
@@ -37,16 +36,15 @@ function Layout() {
             <Route path="/login" element={<Login />} />
             <Route path="/signup" element={<Signup />} />
             <Route path="/patient-dashboard" element={<PatientDashboard />} />
-            <Route path="/hospital-dashboard" element={<HospitalDashboard />} />
             <Route path="/analyze-patient" element={<ReportAnalysisPatient />} />
-            <Route path="/analyze-doctor" element={<ReportAnalysisDoctor />} />
             <Route path="/analyze-ecg" element={<EcgAnalysis />} />
             <Route path="/cancer-analysis-patient" element={<CancerAnalysisPatient />} />
-            <Route path="/cancer-analysis-doctor" element={<CancerAnalysisDoctor />} />
             <Route path="/appointments/book" element={<AppointmentBook />} />
             <Route path="/lab-portal" element={<LabPortal />} />
             <Route path="/lab-login" element={<LabLogin />} />
             <Route path="/lab-signup" element={<LabSignup />} />
+            <Route path="/lab-report/:id" element={<LabReportView />} />
+            <Route path="/compare-reports" element={<CompareReports />} />
           </Routes>
         </main>
         {!isAuthPage && !isPremiumPage && <Footer />}

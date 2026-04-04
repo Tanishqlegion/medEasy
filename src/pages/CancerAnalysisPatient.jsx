@@ -6,10 +6,9 @@ import { Button } from '../components/Button';
 import { cn } from '../components/Button';
 import { useAuth } from '../context/AuthContext';
 import * as pdfjs from 'pdfjs-dist';
-import pdfWorker from 'pdfjs-dist/build/pdf.worker.mjs?url';
 import Tesseract from 'tesseract.js';
 
-pdfjs.GlobalWorkerOptions.workerSrc = pdfWorker;
+pdfjs.GlobalWorkerOptions.workerSrc = `https://unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.mjs`;
 
 const fadeInUp = {
   initial: { opacity: 0, y: 20 },

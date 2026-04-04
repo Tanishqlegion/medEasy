@@ -38,4 +38,7 @@ app_log.txt
 out.txt
 out.log
 test_db.cjs
-test_db.js
+
+# Large Binaries
+*.pkl
+modelsPred/*.pkl

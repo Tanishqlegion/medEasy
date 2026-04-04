@@ -22,7 +22,7 @@ export default function Signup() {
     setError('');
 
     try {
-      const response = await fetch("http://127.0.0.1:5002/api/auth/register", {
+      const response = await fetch("http://localhost:5002/api/auth/register", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ name, email, password, role })
@@ -32,13 +32,19 @@ export default function Signup() {
       if (!response.ok) throw new Error(data.msg || "Signup failed");
 
       login(data.user, data.token);
-      navigate(data.user.role === 'doctor' ? '/hospital-dashboard' : '/patient-dashboard');
-    } catch (err) {
-      setError(err.message);
-    } finally {
-      setLoading(false);
-    }
-  };
+      if (data.user.role === 'doctor') navigate('/hospital-dashboard');
+      else if (data.user.role === 'lab') navigate('/lab-portal');
+      else navigate('/patient-dashboard');
+      } catch (err) {
+            if (err.message.includes('Failed to fetch')) {
+                setError("Server busy");
+            } else {
+                setError(err.message);
+            }
+      } finally {
+        setLoading(false);
+      }
+    };
 
   return (
     <div className="flex-1 w-full flex items-center justify-center p-4 bg-mesh relative overflow-hidden">
@@ -81,20 +87,13 @@ export default function Signup() {
         )}
 
         <form onSubmit={handleSubmit} className="space-y-3">
-          <div className="p-1 bg-[var(--bg-main)]/50 border border-white/10 rounded-[16px] grid grid-cols-3 gap-1">
+          <div className="p-1 bg-[var(--bg-main)]/50 border border-white/10 rounded-[16px] grid grid-cols-2 gap-1">
             <button
               type="button"
               onClick={() => setRole('patient')}
               className={`py-2 rounded-xl text-[9px] font-black uppercase tracking-[0.15em] transition-all duration-300 ${role === 'patient' ? 'bg-cyan-500 text-white shadow-lg shadow-cyan-500/20' : 'text-[var(--text-muted)] hover:text-[var(--text-main)] hover:bg-white/5'}`}
             >
               Patient
-            </button>
-            <button
-              type="button"
-              onClick={() => setRole('doctor')}
-              className={`py-2 rounded-xl text-[9px] font-black uppercase tracking-[0.15em] transition-all duration-300 ${role === 'doctor' ? 'bg-violet-600 text-white shadow-lg shadow-violet-500/20' : 'text-[var(--text-muted)] hover:text-[var(--text-main)] hover:bg-white/5'}`}
-            >
-              Doctor
             </button>
             <button
               type="button"
@@ -165,7 +164,7 @@ export default function Signup() {
 
           <Button
             type="submit"
-            disabled={loading || !agreed}
+            disabled={loading || !agreed || password.length < 6}
             className="w-full h-11 rounded-xl button-premium transition-all flex items-center justify-center gap-2 font-black uppercase tracking-[0.2em] text-[10px] mt-2 disabled:opacity-30 disabled:cursor-not-allowed"
           >
             {loading ? (
@@ -174,6 +173,12 @@ export default function Signup() {
               <>Construct Account <ArrowRight className="w-4 h-4" /></>
             )}
           </Button>
+          {password.length > 0 && password.length < 6 && (
+            <p className="text-[10px] text-rose-500 font-bold text-center mt-2 uppercase tracking-widest">
+              At least 6 characters required
+            </p>
+          )}
+
         </form>
 
         <div className="mt-4 text-center pt-4 border-t border-white/5 space-y-3">
@@ -181,6 +186,11 @@ export default function Signup() {
             Already established?{' '}
             <Link to="/login" className="text-cyan-500 hover:text-cyan-400 transition-colors ml-1">Login Here</Link>
           </p>
+          <div className="pt-2">
+             <Link to="/lab-signup" className="text-[10px] font-black uppercase tracking-[0.2em] text-emerald-500 hover:text-emerald-400 transition-colors">
+               Facility Staff? Access Lab Registration
+             </Link>
+          </div>
           <div className="text-[9px] uppercase font-black tracking-widest text-[var(--text-muted)] opacity-50 flex items-center justify-center gap-2">
             <ShieldCheck className="w-3 h-3 text-emerald-500" /> HIPAA Validated
           </div>

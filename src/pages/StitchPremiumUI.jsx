@@ -144,7 +144,7 @@ const StitchPremiumUI = () => {
           <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-cyan-400 to-blue-600 flex items-center justify-center shadow-lg shadow-cyan-500/20">
             <Microscope className="w-5 h-5 text-white" />
           </div>
-          <span className="text-xl font-black tracking-tighter text-[var(--text-main)]">DOCTOR-AI <span className="text-cyan-500">STITCH</span></span>
+          <span className="text-xl font-black tracking-tighter text-[var(--text-main)]">MEDEZ <span className="text-cyan-500">STITCH</span></span>
         </div>
         <div className="flex items-center gap-4">
           <button 
@@ -357,7 +357,7 @@ const StitchPremiumUI = () => {
                 <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-cyan-400 to-blue-600 flex items-center justify-center shadow-lg">
                   <Microscope className="w-5 h-5 text-white" />
                 </div>
-                <span className="text-2xl font-black tracking-tighter text-[var(--text-main)]">DOCTOR-AI <span className="text-cyan-500">STITCH</span></span>
+                <span className="text-2xl font-black tracking-tighter text-[var(--text-main)]">MEDEZ <span className="text-cyan-500">STITCH</span></span>
               </div>
               <p className="text-[var(--text-muted)] max-w-sm">Premium genomic intelligence and diagnostic safety protocols. Built for the next generation of healthcare.</p>
             </div>
@@ -393,7 +393,7 @@ const StitchPremiumUI = () => {
           </div>
           
           <div className="flex flex-col md:flex-row justify-between items-center pt-12 border-t border-[var(--glass-border)] gap-6 opacity-60">
-            <span className="text-[9px] font-bold text-[var(--text-muted)] tracking-widest uppercase">© 2026 DOCTOR-AI STITCH. EMPOWERING BIOLOGICAL CLARITY.</span>
+            <span className="text-[9px] font-bold text-[var(--text-muted)] tracking-widest uppercase">© 2026 MEDEZ STITCH. EMPOWERING BIOLOGICAL CLARITY.</span>
             <div className="flex items-center gap-4">
               <Layers className="w-4 h-4 text-[var(--text-muted)] hover:text-cyan-500 cursor-pointer transition-colors" />
               <Globe className="w-4 h-4 text-[var(--text-muted)] hover:text-cyan-500 cursor-pointer transition-colors" />

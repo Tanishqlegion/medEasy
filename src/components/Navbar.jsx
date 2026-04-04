@@ -23,7 +23,7 @@ export default function Navbar() {
             <Stethoscope className="h-5 w-5 text-white" />
           </div>
           <span className="text-lg font-extrabold tracking-tight text-[var(--text-main)]">
-            Doctor<span className="text-cyan-500">AI</span>
+            Med<span className="text-cyan-500">Ez</span>
           </span>
         </Link>
 
@@ -32,12 +32,11 @@ export default function Navbar() {
           {user && (
             <>
               <Link
-                to={user.role === 'doctor' ? '/hospital-dashboard' : '/patient-dashboard'}
+                to={user.role === 'lab' ? '/lab-portal' : '/patient-dashboard'}
                 className="text-[11px] font-bold uppercase tracking-wider text-[var(--text-muted)] hover:text-cyan-500 transition-colors px-4 py-2 rounded-lg hover:bg-cyan-500/5"
               >
                 Dashboard
               </Link>
-
             </>
           )}
 
@@ -62,7 +61,9 @@ export default function Navbar() {
             <div className="flex items-center gap-3 ml-1">
               <div className="hidden md:block text-right">
                 <p className="text-[11px] font-bold text-[var(--text-main)] leading-none">{user.name}</p>
-                <p className="text-[9px] text-cyan-500 font-semibold uppercase tracking-wider mt-0.5">{user.role === 'doctor' ? 'Physician' : 'Patient'}</p>
+                <p className="text-[9px] text-cyan-500 font-semibold uppercase tracking-wider mt-0.5">
+                  {user.role === 'lab' ? 'Lab Technician' : 'Patient'}
+                </p>
               </div>
               <button
                 onClick={handleSignOut}

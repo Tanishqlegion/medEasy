@@ -117,7 +117,7 @@ const DarkDNABackground = () => {
               className="relative w-full h-5 flex items-center justify-center"
               style={{
                 perspective: '1500px',
-                marginTop: '-10px', // Reduced negative margin to increase spacing between bases
+                marginTop: '-5px', // Increased spacing from -10px
                 transformStyle: 'preserve-3d'
               }}
             >
@@ -125,10 +125,10 @@ const DarkDNABackground = () => {
               <motion.div
                 animate={{ rotateY: [0, 360] }}
                 transition={{
-                  duration: 1.0, // Hyper-fast rotation speed
+                  duration: 4.0, // Slowed down further from 3.0s
                   repeat: Infinity,
                   ease: "linear",
-                  delay: i * 0.05 // Increased phase delay to make the helix twists much tighter (more compact)
+                  delay: i * 0.05
                 }}
                 className="relative w-full h-full flex items-center justify-between px-20"
                 style={{ transformStyle: 'preserve-3d' }}
@@ -136,19 +136,19 @@ const DarkDNABackground = () => {
                 {/* Nucleotide Node A */}
                 <div 
                   className="w-2.5 h-2.5 rounded-full bg-cyan-400 shadow-[0_0_20px_#22d3ee] ring-1 ring-cyan-200/40" 
-                  style={{ transform: 'translateZ(70px)' }} // Reduced amplitude for a thinner strand
+                  style={{ transform: 'translateZ(100px)' }} // Increased from 70px
                 />
                 
                 {/* Hydrogen Bond Connection */}
                 <div 
                   className="h-[1px] flex-grow mx-2 bg-gradient-to-r from-cyan-400/60 via-indigo-500/40 to-pink-500/60" 
-                  style={{ transform: 'translateZ(35px)' }}
+                  style={{ transform: 'translateZ(50px)' }} // Adjusted accordingly
                 />
                 
                 {/* Nucleotide Node B */}
                 <div 
                   className="w-2.5 h-2.5 rounded-full bg-pink-500 shadow-[0_0_20px_#ec4899] ring-1 ring-pink-300/40" 
-                  style={{ transform: 'translateZ(-70px)' }} // Reduced amplitude
+                  style={{ transform: 'translateZ(-100px)' }} // Increased from -70px
                 />
               </motion.div>
             </div>

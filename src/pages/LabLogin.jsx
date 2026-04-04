@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Database, Lock, ArrowRight, ShieldCheck, Mail, Sparkles } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { Button } from '../components/Button';
 import { useAuth } from '../context/AuthContext';
 
@@ -13,21 +13,36 @@ export default function LabLogin() {
     const { login } = useAuth();
     const navigate = useNavigate();
 
-    const handleSubmit = (e) => {
+    const handleSubmit = async (e) => {
         e.preventDefault();
         setLoading(true);
         setError('');
 
-        // Simulate authentication for the Lab Portal since backend is not connected yet for this role
-        setTimeout(() => {
-            if (labId && password) {
-                login({ name: labId.split('@')[0], role: 'lab' }, 'mock-lab-token-123');
-                navigate('/lab-portal');
-            } else {
-                setError('Invalid access credentials');
+        try {
+            const response = await fetch("http://localhost:5002/api/auth/login", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ email: labId, password })
+            });
+
+            const data = await response.json();
+
+            if (!response.ok) throw new Error(data.msg || "Access denied");
+            if (data.user.role !== 'lab') {
+                throw new Error("Unauthorized credentials: Patients must use the primary Patient Login portal.");
             }
+
+            login(data.user, data.token);
+            navigate('/lab-portal');
+        } catch (err) {
+            if (err.message.includes('Failed to fetch')) {
+                setError("Server busy");
+            } else {
+                setError(err.message);
+            }
+        } finally {
             setLoading(false);
-        }, 1500);
+        }
     };
 
     return (
@@ -103,8 +118,8 @@ export default function LabLogin() {
 
                     <Button
                         type="submit"
-                        disabled={loading}
-                        className="w-full mt-2 h-14 rounded-2xl flex items-center justify-center gap-2 group relative overflow-hidden bg-emerald-600 hover:bg-emerald-500 shadow-[0_0_40px_-10px_rgba(16,185,129,0.5)]"
+                        disabled={loading || password.length < 6}
+                        className="w-full mt-2 h-14 rounded-2xl flex items-center justify-center gap-2 group relative overflow-hidden bg-emerald-600 hover:bg-emerald-500 shadow-[0_0_40px_-10px_rgba(16,185,129,0.5)] disabled:opacity-30"
                     >
                         <div className="absolute inset-0 bg-white/20 translate-y-full group-hover:translate-y-0 transition-transform duration-300 ease-out" />
                         {loading ? (
@@ -116,6 +131,12 @@ export default function LabLogin() {
                             </>
                         )}
                     </Button>
+                    {password.length > 0 && password.length < 6 && (
+                      <p className="text-[10px] text-rose-500 font-bold text-center mt-2 uppercase tracking-widest">
+                        At least 6 characters required
+                      </p>
+                    )}
+
                 </form>
 
                 <div className="mt-8 text-center pt-6 border-t border-white/5 space-y-4">

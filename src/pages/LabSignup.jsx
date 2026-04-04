@@ -1,34 +1,49 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Database, Lock, ArrowRight, ShieldCheck, Mail, Building2 } from 'lucide-react';
+import { Database, Lock, ArrowRight, ShieldCheck, Mail, Building2, MapPin } from 'lucide-react';
 import { useNavigate, Link } from 'react-router-dom';
 import { Button } from '../components/Button';
 import { useAuth } from '../context/AuthContext';
 
+const CITIES = ['Delhi', 'Mumbai', 'Gwalior', 'Kota'];
+
 export default function LabSignup() {
     const [labId, setLabId] = useState('');
-    const [facilityName, setFacilityName] = useState('');
+    const [labName, setLabName] = useState('');
+    const [city, setCity] = useState('');
     const [password, setPassword] = useState('');
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
     const { login } = useAuth();
     const navigate = useNavigate();
 
-    const handleSubmit = (e) => {
+    const handleSubmit = async (e) => {
         e.preventDefault();
         setLoading(true);
         setError('');
 
-        // Simulate authentication for the Lab Portal
-        setTimeout(() => {
-            if (labId && password && facilityName) {
-                login({ name: facilityName, role: 'lab', email: labId }, 'mock-lab-token-123');
-                navigate('/lab-portal');
+        try {
+            const response = await fetch("http://localhost:5002/api/auth/register", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ name: labName, city, email: labId, password, role: 'lab' })
+            });
+
+            const data = await response.json();
+
+            if (!response.ok) throw new Error(data.msg || "Registration failed");
+
+            login(data.user, data.token);
+            navigate('/lab-portal');
+        } catch (err) {
+            if (err.message.includes('Failed to fetch')) {
+                setError("Server busy");
             } else {
-                setError('All fields are required');
+                setError(err.message || "Server busy");
             }
+        } finally {
             setLoading(false);
-        }, 1500);
+        }
     };
 
     return (
@@ -72,20 +87,13 @@ export default function LabSignup() {
                 )}
 
                 <form onSubmit={handleSubmit} className="space-y-4">
-                    <div className="p-1 bg-[var(--bg-main)]/50 border border-white/10 rounded-[16px] grid grid-cols-3 gap-1 mb-2">
+                    <div className="p-1 bg-[var(--bg-main)]/50 border border-white/10 rounded-[16px] grid grid-cols-2 gap-1 mb-2">
                         <button
                             type="button"
                             onClick={() => navigate('/signup')}
                             className="py-2 mb-0 rounded-xl text-[9px] font-black uppercase tracking-[0.15em] transition-all duration-300 text-[var(--text-muted)] hover:text-[var(--text-main)] hover:bg-white/5"
                         >
                             Patient
-                        </button>
-                        <button
-                            type="button"
-                            onClick={() => navigate('/signup')}
-                            className="py-2 mb-0 rounded-xl text-[9px] font-black uppercase tracking-[0.15em] transition-all duration-300 text-[var(--text-muted)] hover:text-[var(--text-main)] hover:bg-white/5"
-                        >
-                            Doctor
                         </button>
                         <button
                             type="button"
@@ -96,18 +104,36 @@ export default function LabSignup() {
                     </div>
 
                     <div className="space-y-1.5 mt-2">
-                        <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[var(--text-muted)] ml-2">Facility Name</label>
+                        <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[var(--text-muted)] ml-2">First Name of the Lab</label>
                         <div className="relative group">
                             <Building2 className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--text-muted)] group-focus-within:text-emerald-500 transition-colors duration-300" />
                             <input
                                 type="text"
                                 required
-                                value={facilityName}
-                                onChange={(e) => setFacilityName(e.target.value)}
+                                value={labName}
+                                onChange={(e) => setLabName(e.target.value)}
                                 className="w-full bg-white/5 border border-white/10 rounded-2xl py-3 pl-11 pr-4 outline-none focus:border-emerald-500/50 focus:ring-4 focus:ring-emerald-500/5 transition-all text-sm font-bold placeholder:text-[var(--text-muted)]/40"
-                                placeholder="Apollo Diagnostics Pvt Ltd"
+                                placeholder="Diagnostics Lab"
                             />
                         </div>
+                    </div>
+
+                    <div className="space-y-1.5">
+                        <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[var(--text-muted)] ml-2 flex items-center gap-2">
+                            <MapPin className="w-3 h-3 text-emerald-500" /> City
+                        </label>
+                        <select
+                            required
+                            value={city}
+                            onChange={(e) => setCity(e.target.value)}
+                            className="w-full bg-[#030712] border border-white/10 rounded-2xl py-3 px-4 outline-none focus:border-emerald-500/50 transition-all text-sm font-bold cursor-pointer text-white"
+                            style={{ colorScheme: 'dark' }}
+                        >
+                            <option value="" disabled style={{ background: '#020617', color: '#666' }}>Select your city...</option>
+                            {CITIES.map(c => (
+                                <option key={c} value={c} style={{ background: '#020617', color: 'white' }}>{c}</option>
+                            ))}
+                        </select>
                     </div>
 
                     <div className="space-y-1.5">
@@ -142,8 +168,8 @@ export default function LabSignup() {
 
                     <Button
                         type="submit"
-                        disabled={loading}
-                        className="w-full mt-2 h-14 rounded-2xl flex items-center justify-center gap-2 group relative overflow-hidden bg-emerald-600 hover:bg-emerald-500 shadow-[0_0_40px_-10px_rgba(16,185,129,0.5)]"
+                        disabled={loading || password.length < 6}
+                        className="w-full mt-2 h-14 rounded-2xl flex items-center justify-center gap-2 group relative overflow-hidden bg-emerald-600 hover:bg-emerald-500 shadow-[0_0_40px_-10px_rgba(16,185,129,0.5)] disabled:opacity-30"
                     >
                         <div className="absolute inset-0 bg-white/20 translate-y-full group-hover:translate-y-0 transition-transform duration-300 ease-out" />
                         {loading ? (
@@ -155,6 +181,12 @@ export default function LabSignup() {
                             </>
                         )}
                     </Button>
+                    {password.length > 0 && password.length < 6 && (
+                      <p className="text-[10px] text-rose-500 font-bold text-center mt-2 uppercase tracking-widest">
+                        At least 6 characters required
+                      </p>
+                    )}
+
                 </form>
 
                 <div className="mt-4 text-center pt-4 border-t border-white/5 space-y-2 shrink-0">

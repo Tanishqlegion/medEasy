@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
-import { Calendar, FileText, Activity, HeartPulse, ShieldAlert, User, LogOut, Loader2, Microscope, Sparkles, ChevronRight, TrendingUp, ArrowRight, Eye } from 'lucide-react';
+import { Calendar, FileText, Activity, HeartPulse, ShieldAlert, User, LogOut, Loader2, Microscope, Sparkles, ChevronRight, TrendingUp, ArrowRight, Eye, FlaskConical, ExternalLink } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Button } from '../components/Button';
 import { cn } from '../components/Button';
@@ -22,6 +22,8 @@ export default function PatientDashboard() {
   const [loading, setLoading] = useState(true);
   const [isChatOpen, setIsChatOpen] = useState(false);
   const [reportModal, setReportModal] = useState({ open: false, test: '', name: '', bid: '', loading: false });
+  const [labReports, setLabReports] = useState([]);
+  const [labReportsLoading, setLabReportsLoading] = useState(true);
 
   useEffect(() => {
     if (!token || !user) {
@@ -29,24 +31,28 @@ export default function PatientDashboard() {
       return;
     }
 
-    const saved = localStorage.getItem('hackathon_patients');
-    if (saved) {
-      const allPatients = JSON.parse(saved);
-      setAppointments(allPatients.filter(p => p.name === user.name));
-    }
+    // Clear old localStorage appointment data
+    localStorage.removeItem('hackathon_patients');
 
-    const handleStorage = () => {
-      const s = localStorage.getItem('hackathon_patients');
-      if (s) {
-        const allPatients = JSON.parse(s);
-        setAppointments(allPatients.filter(p => p.name === user.name));
+    // Fetch appointments from backend
+    const fetchAppointments = async () => {
+      try {
+        const res = await fetch('http://localhost:5002/api/appointments/my', {
+          headers: { 'x-auth-token': token }
+        });
+        if (res.ok) {
+          const data = await res.json();
+          setAppointments(data);
+        }
+      } catch (err) {
+        console.error('Appointments fetch error:', err);
       }
     };
-    window.addEventListener('storage', handleStorage);
+    fetchAppointments();
 
     const fetchHistory = async () => {
       try {
-        const response = await fetch(`http://127.0.0.1:5002/api/patient-diagnosis/history`, {
+        const response = await fetch(`http://localhost:5002/api/patient-diagnosis/history`, {
           headers: { "x-auth-token": token }
         });
         const data = await response.json();
@@ -60,7 +66,27 @@ export default function PatientDashboard() {
     };
 
     fetchHistory();
-    return () => window.removeEventListener('storage', handleStorage);
+
+    // Fetch lab reports
+    const fetchLabReports = async () => {
+      setLabReportsLoading(true);
+      try {
+        const res = await fetch('http://localhost:5002/api/lab-reports/my-reports', {
+          headers: { 'x-auth-token': token }
+        });
+        if (res.ok) {
+          const data = await res.json();
+          setLabReports(data);
+        }
+      } catch (err) {
+        console.error('Lab reports fetch error:', err);
+      } finally {
+        setLabReportsLoading(false);
+      }
+    };
+    fetchLabReports();
+
+    return () => {};
   }, [token, user, navigate]);
 
   const handleSignOut = () => {
@@ -81,14 +107,14 @@ export default function PatientDashboard() {
     reasoning: 'The ECG waveform shows irregular rhythm patterns with QRS complex deviations. ST segments appear borderline with occasional premature ventricular contractions (PVCs) detected.',
     recs: ['Holter monitoring recommended for 24-48 hours', 'Avoid strenuous physical activity', 'Schedule cardiologist follow-up within 72 hours', 'Monitor blood pressure daily']
   };
-  const mockGroq = {
-    model: 'Groq Llama 3.2 Vision', icon: '🧠', iconColor: 'from-indigo-400 to-purple-600',
+  const mockAI = {
+    model: 'Clinical Vision AI', icon: '🧠', iconColor: 'from-indigo-400 to-purple-600',
     prediction: 'No significant abnormalities detected', confidence: '91.2%', risk: 'Low',
     reasoning: 'The uploaded report has been analysed by the Llama 3.2 Vision model. All key biomarkers and visual indicators appear within normal clinical ranges for this patient demographic.',
     recs: ['Routine annual checkup recommended', 'Maintain current diet and lifestyle', 'Hydration and rest advised', 'Re-test if symptoms persist beyond 2 weeks']
   };
 
-  const currentResult = (reportModal.test === 'ECG') ? mockEcg : mockGroq;
+  const currentResult = (reportModal.test === 'ECG') ? mockEcg : mockAI;
 
   if (!user) return null;
 
@@ -190,9 +216,9 @@ export default function PatientDashboard() {
                 <ResponsiveContainer width="100%" height="100%">
                   <AreaChart data={history.map(h => ({
                     date: new Date(h.date).toLocaleDateString(),
-                    value: h.overallScore || h.health_score || 75,
+                    value: Number(h.overallScore || h.health_score || 75),
                     type: h.type
-                  }))}>
+                  }))} margin={{ top: 10, right: 30, left: -20, bottom: 0 }}>
                     <defs>
                       <linearGradient id="colorVal" x1="0" y1="0" x2="0" y2="1">
                         <stop offset="5%" stopColor="#06b6d4" stopOpacity={0.4} />
@@ -201,7 +227,7 @@ export default function PatientDashboard() {
                     </defs>
                     <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(255,255,255,0.03)" />
                     <XAxis dataKey="date" stroke="rgba(255,255,255,0.2)" fontSize={9} tickLine={false} axisLine={false} tick={{ fontWeight: 800 }} dy={10} />
-                    <YAxis stroke="rgba(255,255,255,0.2)" fontSize={9} tickLine={false} axisLine={false} domain={[0, 100]} tick={{ fontWeight: 800 }} />
+                    <YAxis reversed={false} stroke="rgba(255,255,255,0.2)" fontSize={9} tickLine={false} axisLine={false} domain={[0, 100]} tick={{ fontWeight: 800 }} tickFormatter={(val) => `${val}`} />
                     <Tooltip
                       contentStyle={{
                         backgroundColor: 'rgba(15, 23, 42, 0.95)',
@@ -323,6 +349,83 @@ export default function PatientDashboard() {
         </motion.div>
       )}
 
+      {/* Lab Reports from Facility */}
+      <motion.div
+        variants={fadeInUp}
+        initial="initial"
+        animate="animate"
+        transition={{ delay: 0.48 }}
+        className="glass-panel p-10 rounded-[40px] mb-12 border-white/5 relative overflow-hidden"
+      >
+        <div className="absolute top-0 right-0 w-48 h-48 bg-emerald-500/5 blur-[80px]" />
+        <div className="flex items-center justify-between mb-8 relative z-10">
+          <div className="flex items-center gap-4">
+            <div className="w-12 h-12 rounded-2xl bg-emerald-500/10 flex items-center justify-center border border-emerald-500/20">
+              <FlaskConical className="w-6 h-6 text-emerald-500" />
+            </div>
+            <div>
+              <h2 className="text-base font-black uppercase tracking-[0.2em]">Lab Reports</h2>
+              <p className="text-[10px] uppercase tracking-widest text-[var(--text-muted)] opacity-60">From Your Diagnostic Facility</p>
+            </div>
+          </div>
+          <p className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-widest opacity-40">{labReports.length} Report{labReports.length !== 1 ? 's' : ''}</p>
+        </div>
+
+        {labReportsLoading ? (
+          <div className="py-12 flex justify-center items-center gap-4 opacity-30">
+            <Loader2 className="w-8 h-8 animate-spin text-emerald-500" />
+            <p className="text-[10px] font-black uppercase tracking-[0.3em]">Syncing lab data...</p>
+          </div>
+        ) : labReports.length === 0 ? (
+          <div className="py-16 text-center border-2 border-dashed border-white/5 rounded-[28px]">
+            <FlaskConical className="w-12 h-12 text-white/10 mx-auto mb-4" />
+            <p className="text-[10px] font-black uppercase tracking-[0.3em] text-white/20">No lab reports received</p>
+            <p className="text-[9px] text-white/10 mt-2 font-bold uppercase tracking-widest">Reports uploaded by your lab will appear here</p>
+          </div>
+        ) : (
+          <div className="space-y-4 relative z-10">
+            {labReports.map(report => (
+              <div key={report._id}
+                className="flex flex-col md:flex-row md:items-center justify-between p-6 rounded-[24px] bg-[#030712] border border-white/5 hover:border-emerald-500/20 transition-all group"
+              >
+                <div className="flex items-center gap-5 mb-4 md:mb-0">
+                  <div className="w-12 h-12 rounded-2xl bg-emerald-500/10 flex items-center justify-center border border-emerald-500/20 shrink-0">
+                    <FileText className="w-5 h-5 text-emerald-500" />
+                  </div>
+                  <div>
+                    <p className="text-sm font-bold text-white mb-0.5">{report.reportTitle}</p>
+                    <div className="flex items-center gap-3">
+                      <span className="text-[9px] font-black text-emerald-400 bg-emerald-500/10 px-2.5 py-1 rounded-full border border-emerald-500/20 uppercase tracking-wider">{report.testType}</span>
+                      <span className="text-[10px] text-white/30">{report.labName}</span>
+                      <span className="text-[10px] text-white/20">· {new Date(report.uploadedAt).toLocaleDateString()}</span>
+                    </div>
+                  </div>
+                </div>
+                <div className="flex items-center gap-3">
+                  {report.status === 'analysed' && (
+                    <span className="bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 px-3 py-1.5 rounded-xl text-[9px] font-black uppercase tracking-widest">✓ AI Analysed</span>
+                  )}
+                  {report.status === 'viewed' && (
+                    <span className="bg-cyan-500/10 text-cyan-400 border border-cyan-500/20 px-3 py-1.5 rounded-xl text-[9px] font-black uppercase tracking-widest">Viewed</span>
+                  )}
+                  {report.status === 'pending' && (
+                    <span className="bg-amber-500/10 text-amber-400 border border-amber-500/20 px-3 py-1.5 rounded-xl text-[9px] font-black uppercase tracking-widest">New</span>
+                  )}
+                  <button
+                    onClick={() => navigate(`/lab-report/${report._id}`)}
+                    className="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-500 text-white px-5 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all shadow-lg shadow-emerald-900/30 group-hover:shadow-emerald-900/50"
+                  >
+                    <Eye className="w-3.5 h-3.5" />
+                    View + AI Analysis
+                    <ExternalLink className="w-3 h-3 opacity-60" />
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </motion.div>
+
       {/* History Array */}
       <motion.div
         variants={fadeInUp}
@@ -331,14 +434,26 @@ export default function PatientDashboard() {
         transition={{ delay: 0.5 }}
         className="glass-panel p-10 rounded-[40px] mb-12 relative overflow-hidden"
       >
-        <div className="flex items-center justify-between mb-10">
+        <div className="flex flex-col md:flex-row md:items-center justify-between mb-10 gap-4">
           <div className="flex items-center gap-4">
             <div className="w-12 h-12 rounded-2xl bg-cyan-500/10 flex items-center justify-center border border-cyan-500/20">
               <FileText className="w-6 h-6 text-cyan-500" />
             </div>
-            <h2 className="text-base font-black uppercase tracking-[0.2em]">Diagnostic Archives</h2>
+            <div>
+              <h2 className="text-base font-black uppercase tracking-[0.2em]">Diagnostic Archives</h2>
+              <p className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-widest opacity-40 mt-1">{history.length} RECORDS FOUND</p>
+            </div>
           </div>
-          <p className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-widest opacity-40">{history.length} RECORDS FOUND</p>
+
+          {history.length > 1 && (
+            <button
+              onClick={() => navigate('/compare-reports')}
+              className="flex items-center gap-2 bg-indigo-500/10 hover:bg-indigo-500/20 border border-indigo-500/30 text-indigo-400 px-5 py-3 rounded-xl text-[10px] font-black uppercase tracking-[0.15em] transition-all"
+            >
+              <TrendingUp className="w-4 h-4" />
+              Compare Clinical Timeline
+            </button>
+          )}
         </div>
 
         <div className="min-h-[200px]">

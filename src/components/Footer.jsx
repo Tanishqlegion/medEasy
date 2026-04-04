@@ -10,7 +10,7 @@ export default function Footer() {
             <div className="w-7 h-7 bg-gradient-to-br from-cyan-500 to-violet-600 rounded-lg flex items-center justify-center">
               <Stethoscope className="w-4 h-4 text-white" />
             </div>
-            <span className="text-[var(--text-main)] font-extrabold text-sm tracking-tight">DoctorAI</span>
+            <span className="text-[var(--text-main)] font-extrabold text-sm tracking-tight">MedEz</span>
           </div>
           <p className="text-sm max-w-xs leading-relaxed opacity-70">
             AI-powered clinical decision support. Transforming diagnostics into actionable medical intelligence.
@@ -42,7 +42,7 @@ export default function Footer() {
       </div>
 
       <div className="max-w-7xl mx-auto px-6 mt-8 pt-6 border-t border-[var(--glass-border)] flex flex-col md:flex-row items-center justify-between text-[10px] uppercase tracking-wider opacity-40">
-        <p>&copy; {new Date().getFullYear()} DoctorAI Inc. All rights reserved.</p>
+        <p>&copy; {new Date().getFullYear()} MedEz Inc. All rights reserved.</p>
         <p className="mt-1 md:mt-0">HIPAA Compliant &middot; AES-256 Encrypted</p>
       </div>
     </footer>

@@ -1,6 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Calendar, Building, User, Clock, CheckCircle2, ArrowRight, ShieldAlert, HeartPulse, Search, Eye } from 'lucide-react';
+import {
+    Calendar, Clock, CheckCircle2, ArrowRight, ShieldAlert,
+    Loader2, MapPin, FlaskConical, ChevronRight, X, ArrowLeft,
+    Activity, Droplets, Wind, Brain, ExternalLink, HeartPulse,
+    Building2, Waves, Landmark, GraduationCap
+} from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '../components/Button';
 import { cn } from '../components/Button';
@@ -12,114 +17,164 @@ const fadeInUp = {
     transition: { duration: 0.6, ease: [0.22, 1, 0.36, 1] }
 };
 
-const labOptions = ["City Lab", "Metro Diagnostics", "Apollo Pathology", "Fortis Health Lab"];
-const doctorOptions = ["Dr. Sharma", "Dr. Mehta", "Dr. Iyer", "Dr. Khan", "Dr. Gupta"];
-const testOptions = ["Blood Test", "ECG", "MRI Scan", "CT Scan", "X-Ray", "Biopsy", "Urine Test"];
-const slots = ["09:00 AM", "10:30 AM", "12:00 PM", "02:00 PM", "04:30 PM", "06:00 PM"];
+const CITIES = ['Delhi', 'Mumbai', 'Gwalior', 'Kota'];
+
+const TEST_OPTIONS = [
+    { value: 'Blood Test (CBC)',         icon: Droplets,  model: 'Tesseract OCR + Clinical Vision',             color: 'text-cyan-400',   bg: 'bg-cyan-500/10 border-cyan-500/20' },
+    { value: 'ECG Report',               icon: HeartPulse, model: 'ecg_model.pkl → MaxViT PyTorch',           color: 'text-rose-400',   bg: 'bg-rose-500/10 border-rose-500/20' },
+    { value: 'Kidney Stone (Ultrasound)',icon: Activity,   model: 'kidney_final_detection.pkl → Flask',       color: 'text-amber-400',  bg: 'bg-amber-500/10 border-amber-500/20' },
+    { value: 'Lung Cancer (CT Scan)',    icon: Wind,       model: 'lung_cancer_model.pkl → Flask',            color: 'text-violet-400', bg: 'bg-violet-500/10 border-violet-500/20' },
+    { value: 'Brain Tumor (MRI)',        icon: Brain,      model: 'model.pkl (Brain Tumor) → Flask',          color: 'text-emerald-400',bg: 'bg-emerald-500/10 border-emerald-500/20' },
+];
+
+const SLOTS = ['09:00 AM', '10:30 AM', '12:00 PM', '02:00 PM', '04:30 PM', '06:00 PM'];
+
+function generateBID() {
+    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+    let rnd = '';
+    for (let i = 0; i < 4; i++) rnd += chars.charAt(Math.floor(Math.random() * chars.length));
+    const now = new Date();
+    const dStr = now.toISOString().slice(0, 10).replace(/-/g, '');
+    const tStr = String(now.getHours()).padStart(2, '0') + String(now.getMinutes()).padStart(2, '0');
+    return `BK-${rnd}-${dStr}-${tStr}`;
+}
+
+const CITY_COLORS = {
+    'Delhi': 'from-orange-500/20 to-red-500/20 border-orange-500/30 text-orange-400',
+    'Mumbai': 'from-blue-500/20 to-cyan-500/20 border-blue-500/30 text-blue-400',
+    'Gwalior': 'from-violet-500/20 to-purple-500/20 border-violet-500/30 text-violet-400',
+    'Kota': 'from-emerald-500/20 to-teal-500/20 border-emerald-500/30 text-emerald-400',
+};
 
 export default function AppointmentBook() {
-    const { user } = useAuth();
+    const { user, token } = useAuth();
     const navigate = useNavigate();
 
-    // Load from LS
-    const [patients, setPatients] = useState(() => {
-        const saved = localStorage.getItem('hackathon_patients');
-        return saved ? JSON.parse(saved) : [];
-    });
+    // ─── STEP FLOW: city → lab → details → confirm ───
+    const [step, setStep] = useState('city'); // 'city' | 'lab' | 'details' | 'confirm'
 
-    const [sessionBid, setSessionBid] = useState('');
-    const [view, setView] = useState('form'); // form | confirm
+    const [selectedCity, setSelectedCity] = useState('');
+    const [availableLabs, setAvailableLabs] = useState([]);
+    const [labsLoading, setLabsLoading] = useState(false);
+    const [selectedLab, setSelectedLab] = useState(null);
 
-    const [labs, setLabs] = useState([
-        { id: Date.now(), lab: labOptions[0], doctor: doctorOptions[0], test: testOptions[0], date: new Date().toISOString().split('T')[0], slot: slots[0] },
-        { id: Date.now() + 1, lab: labOptions[1], doctor: doctorOptions[1], test: testOptions[1], date: new Date().toISOString().split('T')[0], slot: slots[1] }
-    ]);
+    // Appointment form
+    const [test, setTest] = useState(TEST_OPTIONS[0].value);
+    const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
+    const [slot, setSlot] = useState(SLOTS[0]);
 
-    const [cancelModal, setCancelModal] = useState({ open: false, pid: null, lab: '', test: '' });
+    // Booking state
+    const [booking, setBooking] = useState(false);
+    const [bookingError, setBookingError] = useState('');
+    const [bookedAppointment, setBookedAppointment] = useState(null);
 
-    // Show Report Modal
-    const [reportModal, setReportModal] = useState({ open: false, test: '', name: '', bid: '', loading: false });
+    // Cancel
+    const [cancelModal, setCancelModal] = useState({ open: false, id: null, lab: '', test: '' });
+    const [cancelLoading, setCancelLoading] = useState(false);
 
+    // Past appointments
+    const [myAppointments, setMyAppointments] = useState([]);
+    const [aptsLoading, setAptsLoading] = useState(true);
+
+    // Load past appointments on mount
     useEffect(() => {
-        // Generate BID on mount if not exist
-        const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
-        let rnd = '';
-        for (let i = 0; i < 4; i++) rnd += chars.charAt(Math.floor(Math.random() * chars.length));
-        const now = new Date();
-        const dStr = now.toISOString().slice(0, 10).replace(/-/g, '');
-        const tStr = String(now.getHours()).padStart(2, '0') + String(now.getMinutes()).padStart(2, '0');
-        setSessionBid(`BK-${rnd}-${dStr}-${tStr}`);
+        if (!token) return;
+        fetchMyAppointments();
+        // Clear old localStorage data
+        localStorage.removeItem('hackathon_patients');
+    }, [token]);
 
-        // Refresh listener for local storage changes across tabs
-        const handleStorage = () => {
-            const saved = localStorage.getItem('hackathon_patients');
-            if (saved) setPatients(JSON.parse(saved));
-        };
-        window.addEventListener('storage', handleStorage);
-        return () => window.removeEventListener('storage', handleStorage);
-    }, []);
-
-    const saveToLS = (newPatients) => {
-        setPatients(newPatients);
-        localStorage.setItem('hackathon_patients', JSON.stringify(newPatients));
+    const fetchMyAppointments = async () => {
+        setAptsLoading(true);
+        try {
+            const res = await fetch('http://localhost:5002/api/appointments/my', {
+                headers: { 'x-auth-token': token }
+            });
+            if (res.ok) {
+                const data = await res.json();
+                setMyAppointments(data);
+            }
+        } catch (err) {
+            console.error('Failed to load appointments:', err);
+        } finally {
+            setAptsLoading(false);
+        }
     };
 
-    const addLab = () => {
-        setLabs([...labs, { id: Date.now(), lab: labOptions[0], doctor: doctorOptions[0], test: testOptions[0], date: new Date().toISOString().split('T')[0], slot: slots[0] }]);
+    // When city is selected, fetch labs in that city
+    const handleCitySelect = async (city) => {
+        setSelectedCity(city);
+        setSelectedLab(null);
+        setAvailableLabs([]);
+        setLabsLoading(true);
+        setStep('lab');
+        try {
+            const res = await fetch(`http://localhost:5002/api/labs/by-city/${city}`);
+            const data = await res.json();
+            setAvailableLabs(Array.isArray(data) ? data : []);
+        } catch (err) {
+            setAvailableLabs([]);
+        } finally {
+            setLabsLoading(false);
+        }
     };
 
-    const removeLab = (id) => {
-        if (labs.length <= 1) return alert('You must have at least one lab.');
-        setLabs(labs.filter(l => l.id !== id));
+    const handleLabSelect = (lab) => {
+        setSelectedLab(lab);
+        setStep('details');
     };
 
-    const updateLab = (id, field, value) => {
-        setLabs(labs.map(l => l.id === id ? { ...l, [field]: value } : l));
+    const handleBooking = async () => {
+        if (!selectedLab || !test || !date || !slot) return;
+        setBooking(true);
+        setBookingError('');
+        const bid = generateBID();
+        try {
+            const res = await fetch('http://localhost:5002/api/appointments/book', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'x-auth-token': token },
+                body: JSON.stringify({ labId: selectedLab._id, test, date, slot, bid })
+            });
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.msg || 'Booking failed');
+            setBookedAppointment(data);
+            setStep('confirm');
+            fetchMyAppointments(); // refresh list
+        } catch (err) {
+            setBookingError(err.message);
+        } finally {
+            setBooking(false);
+        }
     };
 
-    const confirmBooking = () => {
-        const newSessionPatients = labs.map(l => ({
-            id: l.id + Math.random(),
-            name: user?.name || 'Patient',
-            bid: sessionBid,
-            lab: l.lab, doctor: l.doctor, test: l.test, date: l.date, slot: l.slot,
-            uploaded: false, file: null, cancelled: false
-        }));
-        saveToLS([...newSessionPatients, ...patients]);
-        setView('confirm');
-        window.scrollTo({ top: 0, behavior: 'smooth' });
+    const handleCancel = async () => {
+        setCancelLoading(true);
+        try {
+            const res = await fetch(`http://localhost:5002/api/appointments/${cancelModal.id}/cancel`, {
+                method: 'PATCH',
+                headers: { 'x-auth-token': token }
+            });
+            if (res.ok) {
+                fetchMyAppointments();
+                setCancelModal({ open: false, id: null, lab: '', test: '' });
+            }
+        } catch (err) {
+            console.error(err);
+        } finally {
+            setCancelLoading(false);
+        }
     };
 
-    const confirmCancel = () => {
-        const updated = patients.map(p => p.id === cancelModal.pid ? { ...p, cancelled: true } : p);
-        saveToLS(updated);
-        setCancelModal({ open: false, pid: null, lab: '', test: '' });
+    const resetFlow = () => {
+        setStep('city');
+        setSelectedCity('');
+        setSelectedLab(null);
+        setAvailableLabs([]);
+        setBookedAppointment(null);
+        setBookingError('');
     };
 
-    const currentSessionPatients = patients.filter(p => p.bid === sessionBid);
-
-    // Mock Result Logic
-    const showReport = (testType, name, bid) => {
-        setReportModal({ open: true, test: testType, name, bid, loading: true });
-        setTimeout(() => {
-            setReportModal(prev => ({ ...prev, loading: false }));
-        }, 1800);
-    };
-
-    const mockEcg = {
-        model: 'MaxViT ECG Model', icon: '🫀', iconColor: 'from-cyan-400 to-blue-600',
-        prediction: 'Patient with Abnormal Heartbeat', confidence: '87.4%', risk: 'Moderate',
-        reasoning: 'The ECG waveform shows irregular rhythm patterns with QRS complex deviations. ST segments appear borderline with occasional premature ventricular contractions (PVCs) detected.',
-        recs: ['Holter monitoring recommended for 24-48 hours', 'Avoid strenuous physical activity', 'Schedule cardiologist follow-up within 72 hours', 'Monitor blood pressure daily']
-    };
-    const mockGroq = {
-        model: 'Groq Llama 3.2 Vision', icon: '🧠', iconColor: 'from-indigo-400 to-purple-600',
-        prediction: 'No significant abnormalities detected', confidence: '91.2%', risk: 'Low',
-        reasoning: 'The uploaded report has been analysed by the Llama 3.2 Vision model. All key biomarkers and visual indicators appear within normal clinical ranges for this patient demographic.',
-        recs: ['Routine annual checkup recommended', 'Maintain current diet and lifestyle', 'Hydration and rest advised', 'Re-test if symptoms persist beyond 2 weeks']
-    };
-
-    const currentResult = (reportModal.test === 'ECG') ? mockEcg : mockGroq;
+    const cityColor = CITY_COLORS[selectedCity] || 'from-cyan-500/20 to-blue-500/20 border-cyan-500/30 text-cyan-400';
 
     return (
         <div className="flex-grow flex flex-col px-6 py-12 text-[var(--text-main)] max-w-4xl mx-auto w-full relative z-10 bg-mesh min-h-screen">
@@ -127,200 +182,378 @@ export default function AppointmentBook() {
             <div className="blob w-[600px] h-[600px] bg-cyan-500/5 -top-40 -left-60 blur-[150px]" />
             <div className="blob w-[600px] h-[600px] bg-indigo-500/5 -bottom-40 -right-60 blur-[150px]" />
 
-            <h1 className="text-4xl font-black uppercase tracking-tighter mb-2 text-center text-white">Diagnostic Scheduling Array</h1>
-            <p className="text-center text-[11px] font-black uppercase tracking-[0.3em] text-[var(--text-muted)] mb-10 opacity-60">Synchronize multi-facility clinical routing</p>
+            <h1 className="text-4xl font-black uppercase tracking-tighter mb-2 text-center text-white">Book Appointment</h1>
+            <p className="text-center text-[11px] font-black uppercase tracking-[0.3em] text-white/30 mb-10">Select your city → lab → test → confirm</p>
 
-            {view === 'form' ? (
-                <motion.div variants={fadeInUp} initial="initial" animate="animate" className="glass-panel p-10 rounded-[40px]">
-                    <div className="flex items-center justify-between p-6 rounded-2xl bg-[#030712] border border-white/5 mb-8">
-                        <div>
-                            <div className="text-[10px] font-black uppercase tracking-widest text-[var(--text-muted)] mb-1">Session Protocol ID</div>
-                            <div className="font-mono text-cyan-400 font-bold">{sessionBid}</div>
+            {/* Progress steps */}
+            <div className="flex items-center justify-center gap-2 mb-10">
+                {['city', 'lab', 'details', 'confirm'].map((s, i) => (
+                    <React.Fragment key={s}>
+                        <div className={cn("flex items-center gap-2 px-4 py-2 rounded-2xl text-[9px] font-black uppercase tracking-widest border transition-all", 
+                            step === s ? "bg-cyan-500/10 border-cyan-500/30 text-cyan-400" : 
+                            ['city','lab','details','confirm'].indexOf(step) > i ? "bg-emerald-500/10 border-emerald-500/20 text-emerald-400" :
+                            "border-white/5 text-white/20"
+                        )}>
+                            <span className={cn("w-4 h-4 rounded-full flex items-center justify-center text-[8px] font-black",
+                                step === s ? "bg-cyan-500 text-white" :
+                                ['city','lab','details','confirm'].indexOf(step) > i ? "bg-emerald-500 text-white" : "bg-white/10"
+                            )}>{i + 1}</span>
+                            {s}
                         </div>
-                        <div className="flex items-center gap-2">
-                            <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-                            <span className="text-[10px] font-black uppercase tracking-widest text-emerald-500">Active</span>
+                        {i < 3 && <ChevronRight className="w-3 h-3 text-white/10" />}
+                    </React.Fragment>
+                ))}
+            </div>
+
+            <AnimatePresence mode="wait">
+
+                {/* ── STEP 1: CITY ── */}
+                {step === 'city' && (
+                    <motion.div key="city" variants={fadeInUp} initial="initial" animate="animate" exit={{ opacity: 0 }}>
+                        <div className="glass-panel p-10 rounded-[40px] border-white/5">
+                            <h2 className="text-[10px] font-black uppercase tracking-[0.3em] text-white/40 mb-8 flex items-center gap-3">
+                                <MapPin className="w-4 h-4 text-cyan-500" /> Select Your City
+                            </h2>
+                            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                                {CITIES.map(city => (
+                                    <button
+                                        key={city}
+                                        onClick={() => handleCitySelect(city)}
+                                        className={cn("group p-8 rounded-[28px] border bg-gradient-to-br flex flex-col items-center gap-4 transition-all hover:scale-[1.03] hover:shadow-xl",
+                                            CITY_COLORS[city]
+                                        )}
+                                    >
+                                        <div className="w-16 h-16 rounded-[20px] bg-white/5 flex items-center justify-center text-3xl group-hover:scale-110 transition-transform">
+                                            {city === 'Delhi' ? <Building2 className="w-8 h-8"/> : city === 'Mumbai' ? <Waves className="w-8 h-8"/> : city === 'Gwalior' ? <Landmark className="w-8 h-8"/> : <GraduationCap className="w-8 h-8"/>}
+                                        </div>
+                                        <p className="text-base font-black uppercase tracking-tight">{city}</p>
+                                    </button>
+                                ))}
+                            </div>
                         </div>
-                    </div>
+                    </motion.div>
+                )}
 
-                    <div className="space-y-6 mb-10">
-                        <AnimatePresence>
-                            {labs.map((item, index) => (
-                                <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }} key={item.id} className="p-6 rounded-[24px] bg-white/[0.02] border border-white/10 hover:border-cyan-500/30 transition-colors">
-                                    <div className="flex items-center justify-between mb-4">
-                                        <h3 className="text-sm font-black uppercase tracking-widest flex items-center gap-3">
-                                            <span className="w-6 h-6 rounded bg-cyan-500/20 text-cyan-500 flex items-center justify-center text-xs">{index + 1}</span> Node Mapping
-                                        </h3>
-                                        <button onClick={() => removeLab(item.id)} className="text-[10px] font-black uppercase tracking-widest text-rose-500 hover:text-rose-400 bg-rose-500/10 px-3 py-1 rounded-lg">✕ EXCLUDE</button>
-                                    </div>
+                {/* ── STEP 2: LAB ── */}
+                {step === 'lab' && (
+                    <motion.div key="lab" variants={fadeInUp} initial="initial" animate="animate" exit={{ opacity: 0 }} className="space-y-4">
+                        <div className="glass-panel p-10 rounded-[40px] border-white/5">
+                            <div className="flex items-center justify-between mb-8">
+                                <div>
+                                    <h2 className="text-[10px] font-black uppercase tracking-[0.3em] text-white/40 mb-1 flex items-center gap-3">
+                                        <FlaskConical className="w-4 h-4 text-emerald-500" /> Labs in {selectedCity}
+                                    </h2>
+                                    <p className="text-[9px] text-white/20 font-bold uppercase tracking-widest">Select a registered laboratory</p>
+                                </div>
+                                <button onClick={resetFlow} className="flex items-center gap-2 text-[9px] font-black uppercase tracking-widest text-white/30 hover:text-white transition-colors">
+                                    <ArrowLeft className="w-3 h-3" /> Change City
+                                </button>
+                            </div>
 
-                                    <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-                                        <div className="space-y-2">
-                                            <label className="text-[10px] font-black uppercase tracking-widest text-[var(--text-muted)]">Facility Routing</label>
-                                            <select className="w-full bg-[#030712] border border-white/10 rounded-xl px-4 py-3 text-xs outline-none focus:border-cyan-500" value={item.lab} onChange={e => updateLab(item.id, 'lab', e.target.value)}>
-                                                {labOptions.map(o => <option key={o} value={o}>{o}</option>)}
-                                            </select>
-                                        </div>
-                                        <div className="space-y-2">
-                                            <label className="text-[10px] font-black uppercase tracking-widest text-[var(--text-muted)]">Assigned Specialist</label>
-                                            <select className="w-full bg-[#030712] border border-white/10 rounded-xl px-4 py-3 text-xs outline-none focus:border-cyan-500" value={item.doctor} onChange={e => updateLab(item.id, 'doctor', e.target.value)}>
-                                                {doctorOptions.map(o => <option key={o} value={o}>{o}</option>)}
-                                            </select>
-                                        </div>
-                                        <div className="space-y-2">
-                                            <label className="text-[10px] font-black uppercase tracking-widest text-[var(--text-muted)]">Diagnostic Type</label>
-                                            <select className="w-full bg-[#030712] border border-white/10 rounded-xl px-4 py-3 text-xs outline-none focus:border-cyan-500" value={item.test} onChange={e => updateLab(item.id, 'test', e.target.value)}>
-                                                {testOptions.map(o => <option key={o} value={o}>{o}</option>)}
-                                            </select>
-                                        </div>
-                                        <div className="space-y-2">
-                                            <label className="text-[10px] font-black uppercase tracking-widest text-[var(--text-muted)]">Date Matrix</label>
-                                            <input type="date" className="w-full bg-[#030712] border border-white/10 rounded-xl px-4 py-3 text-xs outline-none focus:border-cyan-500 uppercase font-mono" value={item.date} onChange={e => updateLab(item.id, 'date', e.target.value)} />
-                                        </div>
-                                        <div className="space-y-2">
-                                            <label className="text-[10px] font-black uppercase tracking-widest text-[var(--text-muted)]">Time Vector</label>
-                                            <select className="w-full bg-[#030712] border border-white/10 rounded-xl px-4 py-3 text-xs outline-none focus:border-cyan-500" value={item.slot} onChange={e => updateLab(item.id, 'slot', e.target.value)}>
-                                                {slots.map(o => <option key={o} value={o}>{o}</option>)}
-                                            </select>
-                                        </div>
-                                    </div>
-                                </motion.div>
-                            ))}
-                        </AnimatePresence>
-                    </div>
+                            {labsLoading ? (
+                                <div className="py-16 flex flex-col items-center gap-4 opacity-40">
+                                    <Loader2 className="w-10 h-10 animate-spin text-cyan-500" />
+                                    <p className="text-[10px] font-black uppercase tracking-[0.3em]">Scanning {selectedCity} network...</p>
+                                </div>
+                            ) : availableLabs.length === 0 ? (
+                                <div className="py-20 text-center border-2 border-dashed border-white/5 rounded-[32px]">
+                                    <FlaskConical className="w-16 h-16 text-white/10 mx-auto mb-4" />
+                                    <p className="text-sm font-black uppercase tracking-tighter text-white/20 mb-2">No Labs in {selectedCity} Yet</p>
+                                    <p className="text-[10px] text-white/10 font-bold uppercase tracking-widest max-w-xs mx-auto leading-relaxed">
+                                        Labs must register first before patients can book appointments with them
+                                    </p>
+                                    <button onClick={resetFlow} className="mt-6 text-[10px] font-black text-cyan-500 uppercase tracking-widest hover:text-cyan-400 transition-colors">
+                                        ← Try another city
+                                    </button>
+                                </div>
+                            ) : (
+                                <div className="space-y-4">
+                                    {availableLabs.map(lab => (
+                                        <button key={lab._id}
+                                            onClick={() => handleLabSelect(lab)}
+                                            className="w-full flex items-center justify-between p-6 rounded-[24px] bg-[#030712] border border-white/5 hover:border-emerald-500/30 hover:bg-emerald-500/[0.03] transition-all group text-left"
+                                        >
+                                            <div className="flex items-center gap-5">
+                                                <div className="w-14 h-14 rounded-[18px] bg-gradient-to-br from-emerald-500/20 to-teal-500/20 border border-emerald-500/20 flex items-center justify-center">
+                                                    <FlaskConical className="w-7 h-7 text-emerald-500" />
+                                                </div>
+                                                <div>
+                                                    <p className="text-base font-black text-white uppercase tracking-tight mb-1">{lab.name}</p>
+                                                    <div className="flex items-center gap-2">
+                                                        <MapPin className="w-3 h-3 text-emerald-500" />
+                                                        <p className="text-[10px] text-emerald-400 font-black uppercase tracking-widest">{lab.city}</p>
+                                                        <span className="text-white/20">·</span>
+                                                        <p className="text-[10px] text-white/30 font-mono">{lab.email}</p>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div className="flex items-center gap-3">
+                                                <span className="bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 px-3 py-1.5 rounded-xl text-[9px] font-black uppercase tracking-widest">
+                                                    Active
+                                                </span>
+                                                <ChevronRight className="w-5 h-5 text-white/20 group-hover:text-white group-hover:translate-x-1 transition-all" />
+                                            </div>
+                                        </button>
+                                    ))}
+                                </div>
+                            )}
+                        </div>
+                    </motion.div>
+                )}
 
-                    <div className="flex gap-4">
-                        <Button variant="outline" onClick={addLab} className="flex-1 bg-white/[0.02] border-white/10 h-14 rounded-[20px] font-black uppercase tracking-widest text-[11px]">+ Allocate Additional Node</Button>
-                        <Button className="flex-1 bg-cyan-600 h-14 rounded-[20px] font-black uppercase tracking-widest text-[11px]" onClick={confirmBooking}>Initialize Protocol <ArrowRight className="w-4 h-4 inline ml-2" /></Button>
-                    </div>
-                </motion.div>
-            ) : (
-                <motion.div variants={fadeInUp} initial="initial" animate="animate" className="glass-panel p-10 rounded-[40px]">
-                    <div className="text-center mb-10">
-                        <div className="w-16 h-16 bg-emerald-500/10 text-emerald-500 flex items-center justify-center rounded-[24px] mx-auto text-2xl mb-6 shadow-[0_0_30px_-5px_rgba(16,185,129,0.3)]"><CheckCircle2 className="w-8 h-8" /></div>
-                        <h2 className="text-3xl font-black uppercase tracking-tighter text-emerald-400 mb-2">Protocol Secured</h2>
-                        <p className="text-[11px] font-black uppercase tracking-[0.2em] text-[var(--text-muted)] opacity-60">Session ID: <span className="text-white bg-white/10 px-2 py-1 rounded font-mono ml-2">{sessionBid}</span></p>
-                    </div>
-
-                    <div className="space-y-4">
-                        {currentSessionPatients.map((p) => (
-                            <div key={p.id} className="flex flex-col md:flex-row items-start md:items-center justify-between p-6 rounded-2xl bg-[#030712] border border-white/5 group transition-colors hover:border-cyan-500/20">
+                {/* ── STEP 3: DETAILS ── */}
+                {step === 'details' && selectedLab && (
+                    <motion.div key="details" variants={fadeInUp} initial="initial" animate="animate" exit={{ opacity: 0 }}>
+                        <div className="glass-panel p-10 rounded-[40px] border-white/5">
+                            {/* Selected lab summary */}
+                            <div className="flex items-center justify-between mb-8">
                                 <div className="flex items-center gap-4">
-                                    <div className="w-12 h-12 bg-white/5 rounded-xl flex items-center justify-center text-cyan-500 shrink-0"><Building className="w-5 h-5" /></div>
+                                    <div className="w-14 h-14 rounded-[18px] bg-gradient-to-br from-emerald-500/20 to-teal-500/20 border border-emerald-500/20 flex items-center justify-center">
+                                        <FlaskConical className="w-7 h-7 text-emerald-500" />
+                                    </div>
                                     <div>
-                                        <div className="text-sm font-bold tracking-tight mb-1">{p.lab} <span className="text-[var(--text-muted)] mx-2">/</span> <span className="text-cyan-400">{p.test}</span></div>
-                                        <div className="text-[10px] font-black uppercase tracking-[0.2em] text-[var(--text-muted)] opacity-60">{p.doctor} · {p.date} · {p.slot}</div>
+                                        <p className="text-base font-black text-white uppercase tracking-tight">{selectedLab.name}</p>
+                                        <div className="flex items-center gap-2">
+                                            <MapPin className="w-3 h-3 text-emerald-500" />
+                                            <p className="text-[10px] text-emerald-400 font-black uppercase tracking-widest">{selectedCity}</p>
+                                        </div>
                                     </div>
                                 </div>
-                                <div className="mt-4 md:mt-0 flex flex-wrap items-center gap-3 w-full md:w-auto">
-                                    {p.cancelled ? (
-                                        <span className="bg-rose-500/10 text-rose-500 border border-rose-500/20 px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest flex items-center gap-2 w-full md:w-auto justify-center"><ShieldAlert className="w-3 h-3" /> Cancelled</span>
-                                    ) : p.uploaded ? (
-                                        <div className="flex items-center gap-3 w-full md:w-auto">
-                                            <span className="bg-emerald-500/10 text-emerald-500 px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest flex items-center gap-2">✔ {p.file}</span>
-                                            <button onClick={() => showReport(p.test, p.name, p.bid)} className="w-full md:w-auto bg-indigo-500/10 border border-indigo-500/30 text-indigo-400 px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-indigo-500/20 transition-colors flex items-center gap-2 justify-center"><Search className="w-3 h-3" /> Show Report</button>
-                                        </div>
-                                    ) : (
-                                        <div className="flex items-center gap-3 w-full md:w-auto">
-                                            <span className="bg-cyan-500/10 text-cyan-500 px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest">Routing Pending</span>
-                                            <button onClick={() => setCancelModal({ open: true, pid: p.id, lab: p.lab, test: p.test })} className="bg-rose-500/5 text-rose-500 border border-rose-500/10 px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-rose-500/10 transition-colors flex-1 md:flex-none">Abort</button>
-                                        </div>
-                                    )}
+                                <button onClick={() => setStep('lab')} className="flex items-center gap-2 text-[9px] font-black uppercase tracking-widest text-white/30 hover:text-white transition-colors">
+                                    <ArrowLeft className="w-3 h-3" /> Change Lab
+                                </button>
+                            </div>
+
+                            {/* Test Type Visual Selector */}
+                            <div className="mb-8">
+                                <label className="text-[9px] font-black uppercase tracking-[0.3em] text-white/40 block mb-4">Diagnostic Test</label>
+                                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                                    {TEST_OPTIONS.map(opt => (
+                                        <button
+                                            key={opt.value}
+                                            type="button"
+                                            onClick={() => setTest(opt.value)}
+                                            className={cn(
+                                                'flex items-center gap-3 p-4 rounded-[20px] border text-left transition-all hover:scale-[1.02]',
+                                                test === opt.value
+                                                    ? `${opt.bg} border-opacity-80 shadow-lg`
+                                                    : 'bg-white/[0.02] border-white/5 hover:border-white/20'
+                                            )}
+                                        >
+                                            <opt.icon className={cn('w-6 h-6 shrink-0', test === opt.value ? opt.color : 'text-white/40')} />
+                                            <div className="min-w-0">
+                                                <p className={cn('text-[10px] font-black uppercase tracking-tight leading-tight', test === opt.value ? opt.color : 'text-white')}>
+                                                    {opt.value}
+                                                </p>
+                                                <p className="text-[8px] text-white/30 uppercase tracking-wide mt-0.5 truncate">
+                                                    {opt.model}
+                                                </p>
+                                            </div>
+                                            {test === opt.value && (
+                                                <CheckCircle2 className={cn('w-4 h-4 shrink-0 ml-auto', opt.color)} />
+                                            )}
+                                        </button>
+                                    ))}
                                 </div>
                             </div>
-                        ))}
-                    </div>
 
-                    <div className="mt-10 flex justify-center">
-                        <Button variant="outline" className="text-[10px] font-black tracking-[0.2em] uppercase rounded-xl" onClick={() => navigate('/patient-dashboard')}>Return to Dashboard</Button>
-                    </div>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-5 mb-8">
+                                {/* Date */}
+                                <div className="space-y-2">
+                                    <label className="text-[9px] font-black uppercase tracking-[0.3em] text-white/40 block">Date</label>
+                                    <input
+                                        type="date"
+                                        value={date}
+                                        min={new Date().toISOString().split('T')[0]}
+                                        onChange={e => setDate(e.target.value)}
+                                        className="w-full bg-[#030712] border border-white/10 rounded-2xl px-4 py-3.5 text-sm font-bold outline-none focus:border-cyan-500/50 transition-all font-mono uppercase"
+                                    />
+                                </div>
+                                {/* Slot */}
+                                <div className="space-y-2">
+                                    <label className="text-[9px] font-black uppercase tracking-[0.3em] text-white/40 block">Time Slot</label>
+                                    <select
+                                        value={slot}
+                                        onChange={e => setSlot(e.target.value)}
+                                        className="w-full bg-[#030712] border border-white/10 rounded-2xl px-4 py-3.5 text-sm font-bold outline-none focus:border-cyan-500/50 transition-all appearance-none cursor-pointer"
+                                    >
+                                        {SLOTS.map(o => <option key={o} value={o} className="bg-[#020617]">{o}</option>)}
+                                    </select>
+                                </div>
+                            </div>
+
+                            {bookingError && (
+                                <div className="mb-6 p-4 rounded-2xl bg-rose-500/10 border border-rose-500/20 text-rose-400 text-[10px] font-black uppercase tracking-widest">
+                                    {bookingError}
+                                </div>
+                            )}
+
+                            <Button
+                                onClick={handleBooking}
+                                disabled={booking}
+                                className="w-full h-16 rounded-[24px] bg-cyan-600 font-black uppercase tracking-[0.3em] text-[10px] shadow-xl shadow-cyan-900/40 group relative overflow-hidden border-none"
+                            >
+                                <span className="relative z-10 flex items-center justify-center gap-3">
+                                    {booking ? <><Loader2 className="w-4 h-4 animate-spin" /> Booking...</> : <>Confirm Appointment <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" /></>}
+                                </span>
+                                <div className="absolute inset-0 bg-white/10 translate-y-full group-hover:translate-y-0 transition-transform" />
+                            </Button>
+                        </div>
+                    </motion.div>
+                )}
+
+                {/* ── STEP 4: CONFIRM ── */}
+                {step === 'confirm' && bookedAppointment && (
+                    <motion.div key="confirm" variants={fadeInUp} initial="initial" animate="animate" exit={{ opacity: 0 }}>
+                        <div className="glass-panel p-12 rounded-[40px] border-emerald-500/20 text-center">
+                            <div className="w-20 h-20 bg-emerald-500/10 border-2 border-emerald-500/30 flex items-center justify-center rounded-[28px] mx-auto mb-6 shadow-[0_0_40px_-10px_rgba(16,185,129,0.4)]">
+                                <CheckCircle2 className="w-10 h-10 text-emerald-500" />
+                            </div>
+                            <h2 className="text-3xl font-black uppercase tracking-tighter text-emerald-400 mb-2">Appointment Confirmed!</h2>
+                            <p className="text-[10px] font-black uppercase tracking-[0.3em] text-white/30 mb-8">Your booking has been saved to the system</p>
+
+                            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-10 text-left">
+                                {[
+                                    { label: 'Booking ID', value: bookedAppointment.bid, mono: true },
+                                    { label: 'Lab', value: bookedAppointment.labName },
+                                ].map((item, i) => (
+                                    <div key={i} className="p-5 rounded-[20px] bg-white/[0.03] border border-white/5">
+                                        <p className="text-[9px] font-black uppercase tracking-[0.3em] text-white/30 mb-1">{item.label}</p>
+                                        <p className={cn("text-sm font-black text-white", item.mono && "font-mono text-cyan-400")}>{item.value}</p>
+                                    </div>
+                                ))}
+                                {/* Test + Model Info */}
+                                <div className="p-5 rounded-[20px] bg-white/[0.03] border border-white/5">
+                                    <p className="text-[9px] font-black uppercase tracking-[0.3em] text-white/30 mb-1">Test</p>
+                                    <div className="flex items-center gap-2">
+                                        {(() => {
+                                            const IconObj = TEST_OPTIONS.find(o => o.value === bookedAppointment.test)?.icon || Activity;
+                                            return <IconObj className="w-5 h-5 text-cyan-400" />;
+                                        })()}
+                                        <p className="text-sm font-black text-white">{bookedAppointment.test}</p>
+                                    </div>
+                                    <p className="text-[8px] text-white/30 uppercase tracking-widest mt-1">
+                                        AI: {TEST_OPTIONS.find(o => o.value === bookedAppointment.test)?.model || 'Clinical Vision'}
+                                    </p>
+                                </div>
+                                <div className="p-5 rounded-[20px] bg-white/[0.03] border border-white/5">
+                                    <p className="text-[9px] font-black uppercase tracking-[0.3em] text-white/30 mb-1">Date & Slot</p>
+                                    <p className="text-sm font-black text-white">{bookedAppointment.date} · {bookedAppointment.slot}</p>
+                                </div>
+
+                            </div>
+
+                            <div className="flex gap-4 justify-center">
+                                <Button onClick={resetFlow} variant="outline" className="h-12 px-8 rounded-2xl border-white/10 font-black uppercase tracking-widest text-[10px]">
+                                    Book Another
+                                </Button>
+                                <Button onClick={() => navigate('/patient-dashboard')} className="h-12 px-8 rounded-2xl bg-cyan-600 font-black uppercase tracking-widest text-[10px]">
+                                    Dashboard <ArrowRight className="w-4 h-4 inline ml-2" />
+                                </Button>
+                            </div>
+                        </div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
+
+            {/* ── PAST APPOINTMENTS ── */}
+            {myAppointments.length > 0 && (
+                <motion.div variants={fadeInUp} initial="initial" animate="animate" transition={{ delay: 0.2 }} className="glass-panel p-10 rounded-[40px] mt-10 border-white/5">
+                    <h2 className="text-[10px] font-black uppercase tracking-[0.3em] text-white/40 mb-8 flex items-center gap-3">
+                        <Calendar className="w-4 h-4 text-cyan-500" /> Your Appointments
+                    </h2>
+                    {aptsLoading ? (
+                        <div className="py-8 flex justify-center opacity-30">
+                            <Loader2 className="w-6 h-6 animate-spin text-cyan-500" />
+                        </div>
+                    ) : (
+                        <div className="space-y-4">
+                            {myAppointments.map(apt => (
+                                <div key={apt._id} className="flex flex-col md:flex-row md:items-center justify-between p-6 rounded-[24px] bg-[#030712] border border-white/5 hover:border-white/10 transition-all group">
+                                    <div className="flex items-center gap-5 mb-4 md:mb-0">
+                                        <div className="w-12 h-12 rounded-2xl bg-cyan-500/10 border border-cyan-500/20 flex items-center justify-center">
+                                            <FlaskConical className="w-5 h-5 text-cyan-500" />
+                                        </div>
+                                        <div>
+                                            <p className="text-sm font-bold text-white mb-0.5">
+                                                {apt.labName} <span className="text-white/30 mx-1">/</span>
+                                                <span className="text-cyan-400">{apt.test}</span>
+                                            </p>
+                                            <p className="text-[10px] text-white/30 font-bold uppercase tracking-widest">
+                                                {apt.city} · {apt.date} · {apt.slot}
+                                            </p>
+                                            <p className="text-[9px] font-mono text-white/20 mt-0.5">{apt.bid}</p>
+                                        </div>
+                                    </div>
+                                    <div className="flex items-center gap-3">
+                                        {apt.status === 'cancelled' ? (
+                                            <span className="bg-rose-500/10 text-rose-500 border border-rose-500/20 px-4 py-2 rounded-xl text-[9px] font-black uppercase tracking-widest flex items-center gap-2">
+                                                <ShieldAlert className="w-3 h-3" /> Cancelled
+                                            </span>
+                                        ) : apt.status === 'uploaded' ? (
+                                            <div className="flex items-center gap-2">
+                                                <span className="bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 px-3 py-2 rounded-xl text-[9px] font-black uppercase tracking-widest">
+                                                    ✔ Report Ready
+                                                </span>
+                                                <button
+                                                    onClick={() => navigate(`/patient-dashboard`)}
+                                                    className="flex items-center gap-1.5 bg-cyan-600 hover:bg-cyan-500 text-white px-4 py-2 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all shadow-lg shadow-cyan-900/30 group"
+                                                >
+                                                    View AI Report
+                                                    <ExternalLink className="w-3 h-3 group-hover:translate-x-0.5 transition-transform" />
+                                                </button>
+                                            </div>
+                                        ) : (
+                                            <>
+                                                <span className="bg-amber-500/10 text-amber-400 border border-amber-500/20 px-4 py-2 rounded-xl text-[9px] font-black uppercase tracking-widest">
+                                                    Pending
+                                                </span>
+                                                <button
+                                                    onClick={() => setCancelModal({ open: true, id: apt._id, lab: apt.labName, test: apt.test })}
+                                                    className="bg-rose-500/10 text-rose-500 border border-rose-500/10 hover:bg-rose-500/20 px-4 py-2 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all"
+                                                >
+                                                    Cancel
+                                                </button>
+                                            </>
+                                        )}
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    )}
                 </motion.div>
             )}
 
             {/* Cancel Modal */}
-            {cancelModal.open && (
-                <div className="fixed inset-0 bg-black/70 backdrop-blur-md z-50 flex items-center justify-center p-4">
-                    <div className="glass-panel p-8 rounded-3xl max-w-sm w-full border-rose-500/30 text-center">
-                        <div className="w-16 h-16 bg-rose-500/10 text-rose-500 flex items-center justify-center rounded-[20px] mx-auto text-2xl mb-6 border border-rose-500/20"><ShieldAlert className="w-8 h-8" /></div>
-                        <h3 className="text-xl font-black uppercase tracking-tighter mb-2">Abort Protocol?</h3>
-                        <p className="text-xs text-[var(--text-muted)] mb-8 font-medium">Canceling "{cancelModal.test}" at {cancelModal.lab}. This will immediately sever the node connection.</p>
-                        <div className="flex gap-4">
-                            <Button variant="outline" className="flex-1" onClick={() => setCancelModal({ open: false, pid: null, lab: '', test: '' })}>Dismiss</Button>
-                            <Button className="bg-rose-600 flex-1" onClick={confirmCancel}>Confirm Abort</Button>
-                        </div>
-                    </div>
-                </div>
-            )}
-
-            {/* Report Summary Modal */}
-            {reportModal.open && (
-                <div className="fixed inset-0 bg-black/80 backdrop-blur-xl z-50 flex items-center justify-center p-4">
-                    <div className="glass-panel p-0 rounded-[32px] w-full max-w-2xl border-white/10 overflow-hidden flex flex-col max-h-[85vh]">
-
-                        <div className="p-6 border-b border-white/5 flex items-center justify-between shrink-0">
-                            <div className="flex items-center gap-4">
-                                <div className={`w-12 h-12 rounded-2xl bg-gradient-to-br ${currentResult.iconColor} flex items-center justify-center text-2xl shadow-lg`}>{currentResult.icon}</div>
-                                <div>
-                                    <div className="text-[9px] font-black uppercase tracking-[0.2em] text-[var(--text-muted)] mb-1">Analysed By</div>
-                                    <div className="font-bold text-sm bg-gradient-to-r from-white to-white/60 text-transparent bg-clip-text uppercase tracking-wider">{currentResult.model}</div>
+            <AnimatePresence>
+                {cancelModal.open && (
+                    <>
+                        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+                            onClick={() => setCancelModal({ open: false, id: null, lab: '', test: '' })}
+                            className="fixed inset-0 bg-black/70 backdrop-blur-md z-50"
+                        />
+                        <div className="fixed inset-0 flex items-center justify-center z-[60] p-4">
+                            <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.9, opacity: 0 }}
+                                className="glass-panel p-8 rounded-[32px] max-w-sm w-full border border-rose-500/30 text-center"
+                            >
+                                <div className="w-16 h-16 bg-rose-500/10 text-rose-500 flex items-center justify-center rounded-[20px] mx-auto mb-5 border border-rose-500/20">
+                                    <ShieldAlert className="w-8 h-8" />
                                 </div>
-                            </div>
-                            <button className="w-8 h-8 rounded-full bg-white/5 flex items-center justify-center text-white/50 hover:text-white" onClick={() => setReportModal({ open: false, test: '', name: '', bid: '', loading: false })}>✕</button>
-                        </div>
-
-                        <div className="p-8 overflow-y-auto w-[100%] hide-scrollbar">
-                            {reportModal.loading ? (
-                                <div className="flex flex-col items-center justify-center py-20 opacity-50">
-                                    <span className="w-12 h-12 rounded-full border-4 border-cyan-500/20 border-t-cyan-500 animate-spin mb-6"></span>
-                                    <div className="text-xs font-black uppercase tracking-[0.3em]">Deploying AI Matrix...</div>
+                                <h3 className="text-xl font-black uppercase tracking-tighter mb-2">Cancel Appointment?</h3>
+                                <p className="text-xs text-white/40 mb-8 font-medium leading-relaxed">
+                                    Cancel <span className="text-white font-bold">{cancelModal.test}</span> at <span className="text-white font-bold">{cancelModal.lab}</span>? This action cannot be undone.
+                                </p>
+                                <div className="flex gap-4">
+                                    <Button variant="outline" className="flex-1 border-white/10" onClick={() => setCancelModal({ open: false, id: null, lab: '', test: '' })} disabled={cancelLoading}>Dismiss</Button>
+                                    <Button className="bg-rose-600 flex-1" onClick={handleCancel} disabled={cancelLoading}>
+                                        {cancelLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Confirm'}
+                                    </Button>
                                 </div>
-                            ) : (
-                                <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
-                                    <div>
-                                        <div className="text-[9px] font-black uppercase tracking-[0.2em] text-[var(--text-muted)] mb-2">Patient Profile Segment</div>
-                                        <div className="text-lg font-bold">{reportModal.name} <span className="text-xs font-mono text-[var(--text-muted)] opacity-60 ml-3">{reportModal.bid}</span></div>
-                                    </div>
-                                    <hr className="border-white/5 border-dashed" />
-
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                        <div className="bg-[#030712] rounded-2xl p-6 border border-white/5">
-                                            <div className="text-[9px] font-black uppercase tracking-[0.2em] text-[var(--text-muted)] mb-3 flex items-center gap-2"><Eye className="w-3 h-3 text-cyan-400" /> AI Hypothesis</div>
-                                            <div className="text-xl font-black uppercase tracking-tight leading-tight">{currentResult.prediction}</div>
-                                        </div>
-                                        <div className="grid grid-cols-2 gap-4">
-                                            <div className="bg-[#030712] rounded-2xl p-5 border border-white/5 flex flex-col justify-center">
-                                                <div className="text-[9px] font-black uppercase tracking-[0.2em] text-[var(--text-muted)] mb-1">Confidence</div>
-                                                <div className="text-2xl font-black text-cyan-400">{currentResult.confidence}</div>
-                                            </div>
-                                            <div className="bg-[#030712] rounded-2xl p-5 border border-white/5 flex flex-col justify-center">
-                                                <div className="text-[9px] font-black uppercase tracking-[0.2em] text-[var(--text-muted)] mb-3">Risk Level</div>
-                                                <div>
-                                                    <span className={cn("px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest border", currentResult.risk === 'Low' ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' : 'bg-rose-500/10 text-rose-400 border-rose-500/20')}>{currentResult.risk}</span>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    <div>
-                                        <div className="text-[9px] font-black uppercase tracking-[0.2em] text-[var(--text-muted)] mb-3">Clinical Reasoning Protocol</div>
-                                        <p className="text-sm leading-relaxed text-[var(--text-muted)]">{currentResult.reasoning}</p>
-                                    </div>
-
-                                    <div className="bg-white/[0.02] rounded-3xl p-6 border border-white/5">
-                                        <div className="text-[9px] font-black uppercase tracking-[0.2em] text-[var(--text-muted)] mb-5">Tactical Directives</div>
-                                        <ul className="space-y-3">
-                                            {currentResult.recs.map((rec, i) => (
-                                                <li key={i} className="flex items-start gap-3 text-xs text-[var(--text-main)] font-medium"><div className="w-1.5 h-1.5 rounded-full bg-cyan-400 mt-1.5 shrink-0"></div> {rec}</li>
-                                            ))}
-                                        </ul>
-                                    </div>
-                                </div>
-                            )}
+                            </motion.div>
                         </div>
-
-                    </div>
-                </div>
-            )}
+                    </>
+                )}
+            </AnimatePresence>
         </div>
     );
 }
